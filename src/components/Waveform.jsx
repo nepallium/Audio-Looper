@@ -9,6 +9,7 @@ const Waveform = ({ audioUrl }) => {
     if (waveformRef.current && audioUrl) {
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current,
+        backend: "MediaElement",
         waveColor: "#ddd",
         progressColor: "#2196f3",
         height: 100,
@@ -21,6 +22,7 @@ const Waveform = ({ audioUrl }) => {
         barRadius: 20,
         barWidth: 5,
       });
+      wavesurfer.current.setVolume(0.1);
       wavesurfer.current.load(audioUrl);
     }
 
