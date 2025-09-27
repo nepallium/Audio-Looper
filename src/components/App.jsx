@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import Waveform from "./Waveform";
 import Controls from "./Controls";
 
+import { useEffect, useRef, useState } from "react";
+import Waveform from "./Waveform";
+import Controls from "./Controls";
+
 export default function App() {
   const audioRef = useRef(null);
 
