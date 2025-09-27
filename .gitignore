@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 public/audios
+.env
 
 # Editor directories and files
 .vscode/*

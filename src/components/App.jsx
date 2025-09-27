@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Waveform from "./Waveform";
 import Controls from "./Controls";
-
-import { useEffect, useRef, useState } from "react";
-import Waveform from "./Waveform";
-import Controls from "./Controls";
+import YtSearchPage from "./yt-search/YtSearchPage";
 
 export default function App() {
   const audioRef = useRef(null);
@@ -15,11 +12,13 @@ export default function App() {
 
   return (
     <>
-      <audio ref={audioRef} src={url} preload="none" controls></audio>
+      {/* <audio ref={audioRef} src={url} preload="none" controls></audio> */}
 
-      <Controls audioRef={audioRef} />
+      {/* <Controls audioRef={audioRef} />
 
-      <Waveform audioUrl={url} audioRef={audioRef} className="w-4 h-10" />
+      <Waveform audioUrl={url} audioRef={audioRef} className="w-4 h-10" /> */}
+
+      <YtSearchPage />
     </>
   );
 }
