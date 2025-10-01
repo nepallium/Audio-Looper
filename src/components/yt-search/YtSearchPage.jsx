@@ -15,32 +15,13 @@ const YtSearchPage = () => {
     setSelectedVideo(videos[0]);
   }, [videos]);
 
-  useEffect(() => {
-    async function fetchData() {
-      if (selectedVideo != null) {
-        const videoId = selectedVideo.id.videoId;
-        try {
-          const res = await fetch(
-            `http://localhost:8000/api/audios/${videoId}`
-          );
-          if (!res.ok) {
-            throw new Error("Failed to fetch video with id: " + videoId);
-          }
-        } catch (error) {
-          console.log("Failed to fetch video");
-        }
-      }
-    }
-
-    fetchData();
-  }, [selectedVideo]);
-
   return (
-    <div className="page-layout !p-0 !pb-5 text-base-light">
+    <div className="page-layout !pb-5 text-base-light">
       <SearchBar
       // onFormSubmit={search}
       />
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3">
+        <VideoDetail video={selectedVideo} />
         <div className="lg:col-span-1">
           <VideoList onVideoSelect={setSelectedVideo} videos={videos.current} />
         </div>

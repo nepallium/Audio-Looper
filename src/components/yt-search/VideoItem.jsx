@@ -1,11 +1,9 @@
 import React from "react";
+import VideoDetail from "./VideoDetail";
 
 export default function VideoItem({ video, onVideoSelect }) {
   return (
-    <div
-      onClick={() => onVideoSelect(video)}
-      className="flex flex-col gap-2 text-base-light"
-    >
+    <div onClick={() => onVideoSelect(video)} className="flex flex-col gap-2">
       <img
         className="min-w-full"
         src={video.snippet.thumbnails.medium.url}

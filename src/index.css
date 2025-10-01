@@ -9,5 +9,5 @@
 }
 
 .page-layout {
-  @apply p-5 bg-tonal-100;
+  @apply p-4 bg-tonal-100;
 }
