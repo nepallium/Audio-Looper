@@ -15,7 +15,7 @@ const useVideos = (defaultSearchTerm) => {
         part: "snippet",
         maxResults: 3,
         type: "video",
-        key: import.meta.env.VITE_YOUTUBE_DATA_KEY,
+        key: import.meta.url.VITE_YOUTUBE_DATA_KEY,
       },
     });
 

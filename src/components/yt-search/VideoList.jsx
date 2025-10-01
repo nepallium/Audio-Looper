@@ -12,7 +12,7 @@ const VideoList = ({ videos, onVideoSelect }) => {
     );
   });
 
-  return <div className="video-previews-list">{renderedList}</div>;
+  return <div className="flex flex-col gap-6">{renderedList}</div>;
 };
 
 export default VideoList;

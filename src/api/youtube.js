@@ -5,7 +5,6 @@ export default axios.create({
   params: {
     part: "snippet",
     type: "video",
-    maxResults: 3,
-    key: import.meta.env.VITE_YOUTUBE_DATA_KEY,
+    key: import.meta.url.VITE_YOUTUBE_DATA_KEY,
   },
 });

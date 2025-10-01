@@ -13,6 +13,7 @@ dist-ssr
 *.local
 public/audios
 .env
+dev-tmp
 
 # Editor directories and files
 .vscode/*
