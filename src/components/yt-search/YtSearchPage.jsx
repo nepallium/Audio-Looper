@@ -11,6 +11,10 @@ const YtSearchPage = () => {
   const [videos, search] = useVideos("interstellar");
   // const videos = useRef(preloadedVids);
 
+  useEffect(() => {
+    setSelectedVideo(null);
+  }, [videos]);
+
   return (
     <div className="page-layout !pb-5 text-base-light">
       <SearchBar onFormSubmit={search} />

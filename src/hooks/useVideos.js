@@ -13,13 +13,16 @@ const useVideos = (defaultSearchTerm) => {
       params: {
         q: term,
         part: "snippet",
-        maxResults: 5,
         type: "video",
+        maxResults: 10,
         key: import.meta.env.VITE_YOUTUBE_DATA_KEY,
       },
     });
 
-    setVideos(response.data.items);
+    const videoItems = response.data.items
+      .filter((item) => item.id.kind === "youtube#video")
+      .slice(0, 5);
+    setVideos(videoItems);
   };
 
   return [videos, search];
