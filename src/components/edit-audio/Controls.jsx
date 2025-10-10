@@ -16,6 +16,13 @@ export default function Controls({ audioRef }) {
   useEffect(() => {
     audioRef.current.volume = 0.3;
     audioRef.current.addEventListener("play", onPlay);
+
+    setupFieldListeners();
+
+    return () => {
+      removeFieldListeners();
+      audioCtxRef.current?.close();
+    };
   }, []);
 
   // Handle cleanup for page unload/close
@@ -38,7 +45,9 @@ export default function Controls({ audioRef }) {
 
   const onPitchChange = ({ target: { value } }) => {
     setPitchValue(value);
-    soundtouchRef.current.parameters.get("pitch").value = +value;
+    if (soundtouchRef.current) {
+      soundtouchRef.current.parameters.get("pitch").value = +value;
+    }
   };
 
   const onTempoChange = ({ target: { value } }) => {
@@ -49,12 +58,16 @@ export default function Controls({ audioRef }) {
 
   const onKeyChange = ({ target: { value } }) => {
     setKeyValue(value);
-    soundtouchRef.current.parameters.get("pitchSemitones").value = +value;
+    if (soundtouchRef.current) {
+      soundtouchRef.current.parameters.get("pitchSemitones").value = +value;
+    }
   };
 
   const onReset = () => {
-    soundtouchRef.current.parameters.get("pitch").value = 1;
-    soundtouchRef.current.parameters.get("pitchSemitones").value = 0;
+    if (soundtouchRef.current) {
+      soundtouchRef.current.parameters.get("pitch").value = 1;
+      soundtouchRef.current.parameters.get("pitchSemitones").value = 0;
+    }
     audioRef.current.playbackRate = 1;
 
     setPitchValue(1);
@@ -80,6 +93,14 @@ export default function Controls({ audioRef }) {
   }
 
   function removeFieldListeners() {
+    if (
+      !pitchRef.current ||
+      !tempoRef.current ||
+      !keyRef.current ||
+      !resetRef.current
+    )
+      return;
+
     pitchRef.current.removeEventListener("input", onPitchChange);
     tempoRef.current.removeEventListener("input", onTempoChange);
     keyRef.current.removeEventListener("input", onKeyChange);
@@ -87,12 +108,15 @@ export default function Controls({ audioRef }) {
   }
 
   const onPlay = async () => {
-    if (audioCtxRef.current) return;
+    if (audioCtxRef.current) {
+      await audioCtxRef.current.resume();
+      return;
+    }
     audioCtxRef.current = new AudioContext();
     const audioCtx = audioCtxRef.current;
     // add worklet asynchronously:
     await audioCtx.audioWorklet.addModule(
-      new URL("../api/SoundTouchWorklet.js", import.meta.url)
+      new URL(`../../api/SoundTouchWorklet.js`, import.meta.url)
     );
     soundtouchRef.current = new AudioWorkletNode(
       audioCtx,

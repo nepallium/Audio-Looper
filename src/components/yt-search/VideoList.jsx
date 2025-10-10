@@ -1,7 +1,6 @@
 import VideoItem from "./VideoItem";
 
 const VideoList = ({ videos, onVideoSelect }) => {
-  console.log(videos);
   if (videos.length === 0) {
     return <div className="h-screen">We didn't find anything...</div>;
   }
