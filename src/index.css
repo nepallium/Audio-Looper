@@ -32,6 +32,22 @@ input[type="range"] {
   );
 }
 
+.sliderticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.sliderticks span {
+  display: flex;
+  justify-content: center;
+  width: 1px;
+  height: 10px;
+  background: #d3d3d3;
+  line-height: 40px;
+  margin-bottom: 50px;
+}
+
 /* WebKit thumb */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -41,9 +57,6 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--clr-primary-a20);
   border: none;
   margin: 0; /* use padding to center */
-}
-#key::-webkit-slider-thumb {
-  transform: translateY(-50%);
 }
 
 /* Firefox */

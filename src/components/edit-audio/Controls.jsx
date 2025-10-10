@@ -139,22 +139,22 @@ export default function Controls({ audioRef }) {
           value={keyValue}
           onChange={onKeyChange}
         />
-        <datalist id="keyrange">
-          <option value="-7"> </option>
-          <option value="-6"> </option>
-          <option value="-5"> </option>
-          <option value="-4"> </option>
-          <option value="-3"> </option>
-          <option value="-2"> </option>
-          <option value="-1"> </option>
-          <option value="0"> </option>
-          <option value="1"> </option>
-          <option value="2"> </option>
-          <option value="3"> </option>
-          <option value="4"> </option>
-          <option value="5"> </option>
-          <option value="6"> </option>
-          <option value="7"> </option>
+        <datalist class="sliderticks">
+          <span>-7</span>
+          <span>-6</span>
+          <span>-5</span>
+          <span>-4</span>
+          <span>-3</span>
+          <span>-2</span>
+          <span>-1</span>
+          <span>0</span>
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+          <span>5</span>
+          <span>6</span>
+          <span>7</span>
         </datalist>
       </label>
       <button ref={resetRef} id="reset" type="reset">
