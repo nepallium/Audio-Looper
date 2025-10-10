@@ -4,12 +4,10 @@ export default function Controls({ audioRef }) {
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 
-  const pitchRef = useRef(null);
   const tempoRef = useRef(null);
   const keyRef = useRef(null);
   const resetRef = useRef(null);
 
-  const [pitchValue, setPitchValue] = useState(1);
   const [tempoValue, setTempoValue] = useState(1);
   const [keyValue, setKeyValue] = useState(0);
 
@@ -43,13 +41,6 @@ export default function Controls({ audioRef }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  const onPitchChange = ({ target: { value } }) => {
-    setPitchValue(value);
-    if (soundtouchRef.current) {
-      soundtouchRef.current.parameters.get("pitch").value = +value;
-    }
-  };
-
   const onTempoChange = ({ target: { value } }) => {
     setTempoValue(value);
     audioRef.current.preservesPitch = true;
@@ -65,12 +56,10 @@ export default function Controls({ audioRef }) {
 
   const onReset = () => {
     if (soundtouchRef.current) {
-      soundtouchRef.current.parameters.get("pitch").value = 1;
       soundtouchRef.current.parameters.get("pitchSemitones").value = 0;
     }
     audioRef.current.playbackRate = 1;
 
-    setPitchValue(1);
     setTempoValue(1);
     setKeyValue(0);
   };
@@ -79,29 +68,19 @@ export default function Controls({ audioRef }) {
     if (!soundtouchRef.current) {
       return;
     }
-    soundtouchRef.current.parameters.get("pitch").value =
-      pitchRef.current.value;
     audioRef.current.preservesPitch = true;
     audioRef.current.playbackRate = tempoRef.current.value;
     audioRef.current.preservesPitch = false;
     soundtouchRef.current.parameters.get("pitchSemitones").value =
       keyRef.current.value;
-    pitchRef.current.addEventListener("input", onPitchChange);
     tempoRef.current.addEventListener("input", onTempoChange);
     keyRef.current.addEventListener("input", onKeyChange);
     resetRef.current.addEventListener("click", onReset);
   }
 
   function removeFieldListeners() {
-    if (
-      !pitchRef.current ||
-      !tempoRef.current ||
-      !keyRef.current ||
-      !resetRef.current
-    )
-      return;
+    if (!tempoRef.current || !keyRef.current || !resetRef.current) return;
 
-    pitchRef.current.removeEventListener("input", onPitchChange);
     tempoRef.current.removeEventListener("input", onTempoChange);
     keyRef.current.removeEventListener("input", onKeyChange);
     resetRef.current.removeEventListener("click", onReset);
@@ -135,33 +114,20 @@ export default function Controls({ audioRef }) {
   return (
     <form>
       <label>
-        Pitch{" "}
-        <input
-          ref={pitchRef}
-          id="pitch"
-          type="range"
-          min="0.25"
-          max="4.0"
-          step="0.01"
-          value={pitchValue}
-          onChange={onPitchChange}
-        />
-      </label>
-      <label>
-        Tempo{" "}
+        Tempo
         <input
           ref={tempoRef}
           id="tempo"
           type="range"
           min="0.25"
-          max="4.0"
+          max="1.5"
           step="0.01"
           value={tempoValue}
           onChange={onTempoChange}
         />
       </label>
       <label>
-        Key{" "}
+        Key
         <input
           ref={keyRef}
           type="range"

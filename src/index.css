@@ -42,6 +42,9 @@ input[type="range"]::-webkit-slider-thumb {
   border: none;
   margin: 0; /* use padding to center */
 }
+#key::-webkit-slider-thumb {
+  transform: translateY(-50%);
+}
 
 /* Firefox */
 input[type="range"]::-moz-range-thumb {
