@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 
@@ -8,11 +8,32 @@ export default function EditAudioPage({ audioRef }) {
   const [currTime, setCurrTime] = useState(0);
   const [audioEl, setAudioEl] = useState(null);
   const timeSliderRef = useRef(null);
+  const timelineRef = useRef(null);
   const rafId = useRef(null); // store requestAnimationFrame id
 
   useEffect(() => {
-    if (audioRef.current) setAudioEl(audioRef.current);
-  }, [audioRef.current]);
+    if (audioRef?.current) setAudioEl(audioRef.current);
+  }, [audioRef]);
+
+  // Create a timeline plugin instance with custom options
+  const timeline = useMemo(
+    () =>
+      TimelinePlugin.create({
+        height: 24,
+        // insertPosition: "beforebegin",
+        container: timeSliderRef,
+        timeInterval: 0.2,
+        primaryLabelInterval: 1,
+        // secondaryLabelInterval: 1,
+        style: {
+          fontSize: "20px",
+          color: "#2D5B88",
+        },
+      }),
+    []
+  );
+
+  const wavesurferPlugins = useMemo(() => [timeline], [timeline]);
 
   // Smooth progress animation using requestAnimationFrame
   const animateProgress = () => {
@@ -76,17 +97,6 @@ export default function EditAudioPage({ audioRef }) {
 
   return (
     <>
-      {wavesurfer && (
-        <input
-          type="range"
-          min="0"
-          max={wavesurfer.getDuration()}
-          step="0.001"
-          value={currTime}
-          onChange={handleSlide}
-          ref={timeSliderRef}
-        />
-      )}
       <WavesurferPlayer
         height={100}
         waveColor={getCssVar("--clr-surface-tonal-a50")}
@@ -100,8 +110,24 @@ export default function EditAudioPage({ audioRef }) {
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onClick={handleWavesurferClick}
+        plugins={wavesurferPlugins}
       />
       {wavesurfer ? <></> : <div>Loading waveform...</div>}
+
+      {wavesurfer && (
+        <>
+          <div ref={timelineRef} style={{ width: "100%" }} />
+          <input
+            type="range"
+            min="0"
+            max={wavesurfer.getDuration()}
+            step="0.001"
+            value={currTime}
+            onChange={handleSlide}
+            ref={timeSliderRef}
+          />
+        </>
+      )}
 
       <div style={{ margin: "1em 0", display: "flex", gap: "1em" }}>
         <button onClick={handlePlayPause} style={{ minWidth: "5em" }}>

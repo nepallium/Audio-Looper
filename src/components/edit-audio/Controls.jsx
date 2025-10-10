@@ -139,7 +139,7 @@ export default function Controls({ audioRef }) {
           value={keyValue}
           onChange={onKeyChange}
         />
-        <datalist class="sliderticks">
+        <datalist className="sliderticks">
           <span>-7</span>
           <span>-6</span>
           <span>-5</span>
