@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
+import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { FaPlayCircle, FaPauseCircle } from "react-icons/fa";
 
 export default function EditAudioPage({ audioRef }) {
@@ -8,15 +9,21 @@ export default function EditAudioPage({ audioRef }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currTime, setCurrTime] = useState(0);
   const [audioEl, setAudioEl] = useState(null);
+  const [loopMode, setLoopMode] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
   const timelineRef = useRef(null);
+  const wsContainerRef = useRef(null);
   const rafId = useRef(null); // store requestAnimationFrame id
 
   useEffect(() => {
     if (audioRef?.current) setAudioEl(audioRef.current);
   }, [audioRef]);
 
-  // Create a timeline plugin instance with custom options
+  // cleanup on unmount
+  useEffect(() => () => window.cancelAnimationFrame(rafId.current), []);
+
   const timeline = useMemo(
     () =>
       TimelinePlugin.create({
@@ -34,7 +41,9 @@ export default function EditAudioPage({ audioRef }) {
     []
   );
 
-  const wavesurferPlugins = useMemo(() => [timeline], [timeline]);
+  const regions = useMemo(() => RegionsPlugin.create(), []);
+
+  const wsPlugins = useMemo(() => [timeline, regions], []);
 
   // Smooth progress animation using requestAnimationFrame
   const animateProgress = () => {
@@ -72,7 +81,7 @@ export default function EditAudioPage({ audioRef }) {
     }
   };
 
-  const handleWavesurferClick = () => {
+  const handleWsClick = (e) => {
     const time = wavesurfer.getCurrentTime();
     setCurrTime(time);
     timeSliderRef.current.style.setProperty(
@@ -91,29 +100,64 @@ export default function EditAudioPage({ audioRef }) {
     );
   };
 
-  // cleanup on unmount
-  useEffect(() => () => window.cancelAnimationFrame(rafId.current), []);
+  const handleTouchStart = (e) => {};
+
+  const handleTouchMove = (e) => {
+    // e.preventDefault();
+    // wavesurfer.setScroll(scrollPx);
+    // Reset
+    touchRegion.current.start = null;
+    touchRegion.current.end = null;
+    touchRegion.current.tempRegion = null;
+  };
+
+  function handleLoopModeChange(e) {
+    const newMode = !loopMode;
+    setLoopMode(newMode);
+
+    const setTouchAction = (el, value) => {
+      if (el) el.style.touchAction = value;
+    };
+
+    const wrapper = wavesurfer.getWrapper();
+    const container = wrapper?.querySelector("div");
+    const touchValue = newMode ? "none" : "auto";
+
+    setTouchAction(wrapper, touchValue);
+    setTouchAction(container, touchValue);
+  }
 
   if (!audioEl) return <div>Loading audio…</div>;
 
   return (
     <>
-      <WavesurferPlayer
-        height={100}
-        waveColor={getCssVar("--clr-surface-tonal-a50")}
-        backend="MediaElement"
-        media={audioEl}
-        responsive={true}
-        normalize={true}
-        progressColor={getCssVar("--clr-primary-a20")}
-        minPxPerSec={100}
-        onReady={(ws) => setWavesurfer(ws)}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onClick={handleWavesurferClick}
-        plugins={wavesurferPlugins}
-      />
-      {wavesurfer ? <></> : <div>Loading waveform...</div>}
+      <div>
+        <button onClick={handleLoopModeChange}>
+          {`Loop Mode: ${loopMode}`}
+        </button>
+      </div>
+      <div
+        ref={wsContainerRef}
+        className="overflow-x-hidden select-none"
+        style={{ touchAction: "none", overflowX: "hidden" }}
+      >
+        <WavesurferPlayer
+          height={100}
+          waveColor={getCssVar("--clr-surface-tonal-a50")}
+          backend="MediaElement"
+          media={audioEl}
+          responsive={true}
+          normalize={true}
+          progressColor={getCssVar("--clr-primary-a20")}
+          minPxPerSec={100}
+          onReady={(ws) => setWavesurfer(ws)}
+          onClick={handleWsClick}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          plugins={wsPlugins}
+        />
+      </div>
+      {wavesurfer ? null : <div>Loading waveform...</div>}
 
       {wavesurfer && (
         <>
