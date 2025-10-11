@@ -112,22 +112,40 @@ export default function Controls({ audioRef }) {
     setupFieldListeners();
   };
 
-  function onPlus(slideRef) {
-    console.log("step " + slideRef.current.step);
-    slideRef.current.value += slideRef.current.step;
-    console.log(slideRef.current.value);
+  function onPlus(onChange, sliderRef) {
+    if (!sliderRef.current) return;
+
+    const slider = sliderRef.current;
+    const currVal = Number(slider.value);
+    if (currVal === Number(slider.max)) return;
+    const newVal =
+      Math.round((Number(slider.value) + Number(slider.step)) * 100) / 100;
+    slider.value = newVal;
+
+    onChange({ target: { value: newVal.toString() } });
   }
-  function onMinus(slideRef) {
-    slideRef.current.value -= slideRef.current.step;
-    console.log(slideRef.current.value);
+  function onMinus(onChange, sliderRef) {
+    if (!sliderRef.current) return;
+
+    const slider = sliderRef.current;
+    const currVal = Number(slider.value);
+    if (currVal === Number(slider.min)) return;
+    const newVal =
+      Math.round((Number(slider.value) - Number(slider.step)) * 100) / 100;
+    slider.value = newVal;
+
+    onChange({ target: { value: newVal.toString() } });
   }
 
   return (
     <form>
       <label>
-        {`Tempo ${tempoValue}`}
+        {`Tempo: ${tempoValue}`}
         <div className="flex items-center gap-2">
-          <IoMdRemoveCircle size={34} onClick={() => onMinus(tempoRef)} />
+          <IoMdRemoveCircle
+            size={34}
+            onClick={() => onMinus(onTempoChange, tempoRef)}
+          />
           <input
             ref={tempoRef}
             id="tempo"
@@ -138,13 +156,19 @@ export default function Controls({ audioRef }) {
             value={tempoValue}
             onChange={onTempoChange}
           />
-          <IoMdAddCircle size={34} onClick={() => onPlus(tempoRef)} />
+          <IoMdAddCircle
+            size={34}
+            onClick={() => onPlus(onTempoChange, tempoRef)}
+          />
         </div>
       </label>
       <label>
-        Key
+        {`Key: ${keyValue}`}
         <div className="flex items-center gap-2">
-          <IoMdRemoveCircle size={34} onClick={() => onMinus(keyRef)} />
+          <IoMdRemoveCircle
+            size={34}
+            onClick={() => onMinus(onKeyChange, keyRef)}
+          />
           <div className="w-full">
             <input
               ref={keyRef}
@@ -175,7 +199,10 @@ export default function Controls({ audioRef }) {
               <span>7</span>
             </datalist>
           </div>
-          <IoMdAddCircle size={34} onClick={() => onPlus(keyRef)} />
+          <IoMdAddCircle
+            size={34}
+            onClick={() => onPlus(onKeyChange, keyRef)}
+          />
         </div>
       </label>
       <button ref={resetRef} id="reset" type="reset" onClick={onReset}>
