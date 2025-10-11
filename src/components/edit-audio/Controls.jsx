@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
 
 export default function Controls({ audioRef }) {
   const audioCtxRef = useRef(null);
@@ -111,53 +112,73 @@ export default function Controls({ audioRef }) {
     setupFieldListeners();
   };
 
+  function onPlus(slideRef) {
+    console.log("step " + slideRef.current.step);
+    slideRef.current.value += slideRef.current.step;
+    console.log(slideRef.current.value);
+  }
+  function onMinus(slideRef) {
+    slideRef.current.value -= slideRef.current.step;
+    console.log(slideRef.current.value);
+  }
+
   return (
     <form>
       <label>
-        Tempo
-        <input
-          ref={tempoRef}
-          id="tempo"
-          type="range"
-          min="0.25"
-          max="1.5"
-          step="0.01"
-          value={tempoValue}
-          onChange={onTempoChange}
-        />
+        {`Tempo ${tempoValue}`}
+        <div className="flex items-center gap-2">
+          <IoMdRemoveCircle size={34} onClick={() => onMinus(tempoRef)} />
+          <input
+            ref={tempoRef}
+            id="tempo"
+            type="range"
+            min="0.25"
+            max="1.5"
+            step="0.01"
+            value={tempoValue}
+            onChange={onTempoChange}
+          />
+          <IoMdAddCircle size={34} onClick={() => onPlus(tempoRef)} />
+        </div>
       </label>
       <label>
         Key
-        <input
-          ref={keyRef}
-          type="range"
-          min="-7.0"
-          max="7.0"
-          id="key"
-          step="1"
-          list="keyrange"
-          value={keyValue}
-          onChange={onKeyChange}
-        />
-        <datalist className="sliderticks">
-          <span>-7</span>
-          <span>-6</span>
-          <span>-5</span>
-          <span>-4</span>
-          <span>-3</span>
-          <span>-2</span>
-          <span>-1</span>
-          <span>0</span>
-          <span>1</span>
-          <span>2</span>
-          <span>3</span>
-          <span>4</span>
-          <span>5</span>
-          <span>6</span>
-          <span>7</span>
-        </datalist>
+        <div className="flex items-center gap-2">
+          <IoMdRemoveCircle size={34} onClick={() => onMinus(keyRef)} />
+          <div className="w-full">
+            <input
+              ref={keyRef}
+              type="range"
+              min="-7.0"
+              max="7.0"
+              id="key"
+              step="1"
+              list="keyrange"
+              value={keyValue}
+              onChange={onKeyChange}
+            />
+            <datalist className="sliderticks">
+              <span>-7</span>
+              <span>-6</span>
+              <span>-5</span>
+              <span>-4</span>
+              <span>-3</span>
+              <span>-2</span>
+              <span>-1</span>
+              <span>0</span>
+              <span>1</span>
+              <span>2</span>
+              <span>3</span>
+              <span>4</span>
+              <span>5</span>
+              <span>6</span>
+              <span>7</span>
+            </datalist>
+          </div>
+          <IoMdAddCircle size={34} onClick={() => onPlus(keyRef)} />
+        </div>
       </label>
-      <button ref={resetRef} id="reset" type="reset">
+      <button ref={resetRef} id="reset" type="reset" onClick={onReset}>
         Reset
       </button>
     </form>
