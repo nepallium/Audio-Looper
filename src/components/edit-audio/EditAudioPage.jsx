@@ -10,6 +10,7 @@ export default function EditAudioPage({ audioRef }) {
   const [currTime, setCurrTime] = useState(0);
   const [audioEl, setAudioEl] = useState(null);
   const [loopMode, setLoopMode] = useState(false);
+  const [minPxPerSec, setMinPxPerSec] = useState(100);
   const [isDragging, setIsDragging] = useState(false);
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
@@ -42,6 +43,12 @@ export default function EditAudioPage({ audioRef }) {
   );
 
   const regions = useMemo(() => RegionsPlugin.create(), []);
+
+  useEffect(() => {
+    regions.enableDragSelection({
+      color: "rgba(255, 0, 0, 0.1)",
+    });
+  }, []);
 
   const wsPlugins = useMemo(() => [timeline, regions], []);
 
@@ -90,7 +97,7 @@ export default function EditAudioPage({ audioRef }) {
     );
   };
 
-  const handleSlide = (e) => {
+  const handleSlideDrag = (e) => {
     const time = parseFloat(e.target.value);
     wavesurfer.setTime(time);
     setCurrTime(time);
@@ -100,16 +107,71 @@ export default function EditAudioPage({ audioRef }) {
     );
   };
 
-  const handleTouchStart = (e) => {};
+  function getCurrScrollSec() {
+    return +wavesurfer.getScroll() / minPxPerSec;
+  }
+
+  function handleTouchStart(e) {
+    if (!loopMode) return;
+
+    const rect = wsContainerRef.current.getBoundingClientRect();
+    const touchX = e.targetTouches[0].clientX - rect.left;
+
+    // convert X position to audio time
+    touchRegion.current.start = +touchX / minPxPerSec + getCurrScrollSec();
+    console.log(touchRegion.current.start);
+  }
 
   const handleTouchMove = (e) => {
-    // e.preventDefault();
-    // wavesurfer.setScroll(scrollPx);
-    // Reset
-    touchRegion.current.start = null;
-    touchRegion.current.end = null;
-    touchRegion.current.tempRegion = null;
+    if (!loopMode || !wavesurfer) return;
+
+    const rect = wsContainerRef.current.getBoundingClientRect();
+    const touchX = e.targetTouches[0].clientX - rect.left;
+
+    touchRegion.current.end = +touchX / minPxPerSec + getCurrScrollSec();
+
+    if (!touchRegion.current.tempRegion) {
+      // Create initial region
+      touchRegion.current.tempRegion = regions.addRegion({
+        start: Math.min(touchRegion.current.start, touchRegion.current.end),
+        end: Math.max(touchRegion.current.start, touchRegion.current.end),
+        color: "rgba(255, 0, 0, 0.2)",
+        drag: false,
+        resize: true,
+      });
+    } else {
+      // Update existing region using setOptions
+      touchRegion.current.tempRegion.setOptions({
+        start: Math.min(touchRegion.current.start, touchRegion.current.end),
+        end: Math.max(touchRegion.current.start, touchRegion.current.end),
+      });
+    }
   };
+
+  function handleTouchEnd(e) {
+    if (!loopMode || !touchRegion.current.start) return;
+
+    const region = touchRegion.current;
+
+    // Remove the temp region
+    if (region.tempRegion) {
+      region.tempRegion.remove();
+    }
+
+    // Add final region
+    if (region.end && region.start !== region.end) {
+      regions.addRegion({
+        start: Math.min(region.start, region.end),
+        end: Math.max(region.start, region.end),
+        color: "rgba(255, 0, 0, 0.1)",
+      });
+    }
+
+    // Reset
+    region.tempRegion = null;
+    region.start = null;
+    region.end = null;
+  }
 
   function handleLoopModeChange(e) {
     const newMode = !loopMode;
@@ -138,8 +200,10 @@ export default function EditAudioPage({ audioRef }) {
       </div>
       <div
         ref={wsContainerRef}
-        className="overflow-x-hidden select-none"
-        style={{ touchAction: "none", overflowX: "hidden" }}
+        className="touch-none select-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <WavesurferPlayer
           height={100}
@@ -149,8 +213,17 @@ export default function EditAudioPage({ audioRef }) {
           responsive={true}
           normalize={true}
           progressColor={getCssVar("--clr-primary-a20")}
-          minPxPerSec={100}
-          onReady={(ws) => setWavesurfer(ws)}
+          minPxPerSec={minPxPerSec}
+          onReady={(ws) => {
+            setWavesurfer(ws);
+
+            const wrapper = ws.getWrapper();
+            const container = wrapper?.querySelector("div");
+            const touchValue = loopMode ? "none" : "auto";
+
+            if (wrapper) wrapper.style.touchAction = touchValue;
+            if (container) container.style.touchAction = touchValue;
+          }}
           onClick={handleWsClick}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -168,7 +241,7 @@ export default function EditAudioPage({ audioRef }) {
             max={wavesurfer.getDuration()}
             step="0.001"
             value={currTime}
-            onChange={handleSlide}
+            onChange={handleSlideDrag}
             ref={timeSliderRef}
           />
         </>
@@ -180,12 +253,14 @@ export default function EditAudioPage({ audioRef }) {
             size={50}
             color={getCssVar("--clr-primary-a30")}
             onClick={handlePlayPause}
+            className="cursor-pointer"
           />
         ) : (
           <FaPlayCircle
             size={50}
             color={getCssVar("--clr-primary-a30")}
             onClick={handlePlayPause}
+            className="cursor-pointer"
           />
         )}
       </div>

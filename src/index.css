@@ -16,6 +16,10 @@
   --range-thumb-size: 20px;
 }
 
+button:hover {
+  cursor: pointer;
+}
+
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;

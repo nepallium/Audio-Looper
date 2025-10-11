@@ -145,6 +145,7 @@ export default function Controls({ audioRef }) {
           <IoMdRemoveCircle
             size={34}
             onClick={() => onMinus(onTempoChange, tempoRef)}
+            className="cursor-pointer"
           />
           <input
             ref={tempoRef}
@@ -159,6 +160,7 @@ export default function Controls({ audioRef }) {
           <IoMdAddCircle
             size={34}
             onClick={() => onPlus(onTempoChange, tempoRef)}
+            className="cursor-pointer"
           />
         </div>
       </label>
@@ -168,6 +170,7 @@ export default function Controls({ audioRef }) {
           <IoMdRemoveCircle
             size={34}
             onClick={() => onMinus(onKeyChange, keyRef)}
+            className="cursor-pointer"
           />
           <div className="w-full">
             <input
@@ -202,6 +205,7 @@ export default function Controls({ audioRef }) {
           <IoMdAddCircle
             size={34}
             onClick={() => onPlus(onKeyChange, keyRef)}
+            className="cursor-pointer"
           />
         </div>
       </label>
