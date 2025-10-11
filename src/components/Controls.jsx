@@ -1,27 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
 
 export default function Controls({ audioRef }) {
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 
+  const pitchRef = useRef(null);
   const tempoRef = useRef(null);
   const keyRef = useRef(null);
   const resetRef = useRef(null);
 
+  const [pitchValue, setPitchValue] = useState(1);
   const [tempoValue, setTempoValue] = useState(1);
   const [keyValue, setKeyValue] = useState(0);
 
   useEffect(() => {
     audioRef.current.volume = 0.3;
     audioRef.current.addEventListener("play", onPlay);
-
-    setupFieldListeners();
-
-    return () => {
-      removeFieldListeners();
-      audioCtxRef.current?.close();
-    };
   }, []);
 
   // Handle cleanup for page unload/close
@@ -42,6 +36,11 @@ export default function Controls({ audioRef }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  const onPitchChange = ({ target: { value } }) => {
+    setPitchValue(value);
+    soundtouchRef.current.parameters.get("pitch").value = +value;
+  };
+
   const onTempoChange = ({ target: { value } }) => {
     setTempoValue(value);
     audioRef.current.preservesPitch = true;
@@ -50,17 +49,15 @@ export default function Controls({ audioRef }) {
 
   const onKeyChange = ({ target: { value } }) => {
     setKeyValue(value);
-    if (soundtouchRef.current) {
-      soundtouchRef.current.parameters.get("pitchSemitones").value = +value;
-    }
+    soundtouchRef.current.parameters.get("pitchSemitones").value = +value;
   };
 
   const onReset = () => {
-    if (soundtouchRef.current) {
-      soundtouchRef.current.parameters.get("pitchSemitones").value = 0;
-    }
+    soundtouchRef.current.parameters.get("pitch").value = 1;
+    soundtouchRef.current.parameters.get("pitchSemitones").value = 0;
     audioRef.current.playbackRate = 1;
 
+    setPitchValue(1);
     setTempoValue(1);
     setKeyValue(0);
   };
@@ -69,34 +66,33 @@ export default function Controls({ audioRef }) {
     if (!soundtouchRef.current) {
       return;
     }
+    soundtouchRef.current.parameters.get("pitch").value =
+      pitchRef.current.value;
     audioRef.current.preservesPitch = true;
     audioRef.current.playbackRate = tempoRef.current.value;
     audioRef.current.preservesPitch = false;
     soundtouchRef.current.parameters.get("pitchSemitones").value =
       keyRef.current.value;
+    pitchRef.current.addEventListener("input", onPitchChange);
     tempoRef.current.addEventListener("input", onTempoChange);
     keyRef.current.addEventListener("input", onKeyChange);
     resetRef.current.addEventListener("click", onReset);
   }
 
   function removeFieldListeners() {
-    if (!tempoRef.current || !keyRef.current || !resetRef.current) return;
-
+    pitchRef.current.removeEventListener("input", onPitchChange);
     tempoRef.current.removeEventListener("input", onTempoChange);
     keyRef.current.removeEventListener("input", onKeyChange);
     resetRef.current.removeEventListener("click", onReset);
   }
 
   const onPlay = async () => {
-    if (audioCtxRef.current) {
-      await audioCtxRef.current.resume();
-      return;
-    }
+    if (audioCtxRef.current) return;
     audioCtxRef.current = new AudioContext();
     const audioCtx = audioCtxRef.current;
     // add worklet asynchronously:
     await audioCtx.audioWorklet.addModule(
-      new URL(`../../api/SoundTouchWorklet.js`, import.meta.url)
+      new URL("../api/SoundTouchWorklet.js", import.meta.url)
     );
     soundtouchRef.current = new AudioWorkletNode(
       audioCtx,
@@ -112,73 +108,66 @@ export default function Controls({ audioRef }) {
     setupFieldListeners();
   };
 
-  function onPlus(slideRef) {
-    console.log("step " + slideRef.current.step);
-    slideRef.current.value += slideRef.current.step;
-    console.log(slideRef.current.value);
-  }
-  function onMinus(slideRef) {
-    slideRef.current.value -= slideRef.current.step;
-    console.log(slideRef.current.value);
-  }
-
   return (
     <form>
       <label>
-        {`Tempo ${tempoValue}`}
-        <div className="flex items-center gap-2">
-          <IoMdRemoveCircle size={34} onClick={() => onMinus(tempoRef)} />
-          <input
-            ref={tempoRef}
-            id="tempo"
-            type="range"
-            min="0.25"
-            max="1.5"
-            step="0.01"
-            value={tempoValue}
-            onChange={onTempoChange}
-          />
-          <IoMdAddCircle size={34} onClick={() => onPlus(tempoRef)} />
-        </div>
+        Pitch{" "}
+        <input
+          ref={pitchRef}
+          id="pitch"
+          type="range"
+          min="0.25"
+          max="4.0"
+          step="0.01"
+          value={pitchValue}
+          onChange={onPitchChange}
+        />
       </label>
       <label>
-        Key
-        <div className="flex items-center gap-2">
-          <IoMdRemoveCircle size={34} onClick={() => onMinus(keyRef)} />
-          <div className="w-full">
-            <input
-              ref={keyRef}
-              type="range"
-              min="-7.0"
-              max="7.0"
-              id="key"
-              step="1"
-              list="keyrange"
-              value={keyValue}
-              onChange={onKeyChange}
-            />
-            <datalist className="sliderticks">
-              <span>-7</span>
-              <span>-6</span>
-              <span>-5</span>
-              <span>-4</span>
-              <span>-3</span>
-              <span>-2</span>
-              <span>-1</span>
-              <span>0</span>
-              <span>1</span>
-              <span>2</span>
-              <span>3</span>
-              <span>4</span>
-              <span>5</span>
-              <span>6</span>
-              <span>7</span>
-            </datalist>
-          </div>
-          <IoMdAddCircle size={34} onClick={() => onPlus(keyRef)} />
-        </div>
+        Tempo{" "}
+        <input
+          ref={tempoRef}
+          id="tempo"
+          type="range"
+          min="0.25"
+          max="4.0"
+          step="0.01"
+          value={tempoValue}
+          onChange={onTempoChange}
+        />
       </label>
-      <button ref={resetRef} id="reset" type="reset" onClick={onReset}>
+      <label>
+        Key{" "}
+        <input
+          ref={keyRef}
+          type="range"
+          min="-7.0"
+          max="7.0"
+          id="key"
+          step="1"
+          list="keyrange"
+          value={keyValue}
+          onChange={onKeyChange}
+        />
+        <datalist id="keyrange">
+          <option value="-7"> </option>
+          <option value="-6"> </option>
+          <option value="-5"> </option>
+          <option value="-4"> </option>
+          <option value="-3"> </option>
+          <option value="-2"> </option>
+          <option value="-1"> </option>
+          <option value="0"> </option>
+          <option value="1"> </option>
+          <option value="2"> </option>
+          <option value="3"> </option>
+          <option value="4"> </option>
+          <option value="5"> </option>
+          <option value="6"> </option>
+          <option value="7"> </option>
+        </datalist>
+      </label>
+      <button ref={resetRef} id="reset" type="reset">
         Reset
       </button>
     </form>

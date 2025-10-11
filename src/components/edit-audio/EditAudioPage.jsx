@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
+import { FaPlayCircle, FaPauseCircle } from "react-icons/fa";
 
 export default function EditAudioPage({ audioRef }) {
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -129,10 +130,20 @@ export default function EditAudioPage({ audioRef }) {
         </>
       )}
 
-      <div style={{ margin: "1em 0", display: "flex", gap: "1em" }}>
-        <button onClick={handlePlayPause} style={{ minWidth: "5em" }}>
-          {isPlaying ? "Pause" : "Play"}
-        </button>
+      <div className="p-5 flex justify-center">
+        {isPlaying ? (
+          <FaPauseCircle
+            size={50}
+            color={getCssVar("--clr-primary-a30")}
+            onClick={handlePlayPause}
+          />
+        ) : (
+          <FaPlayCircle
+            size={50}
+            color={getCssVar("--clr-primary-a30")}
+            onClick={handlePlayPause}
+          />
+        )}
       </div>
     </>
   );
