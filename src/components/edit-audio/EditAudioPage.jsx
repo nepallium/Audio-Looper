@@ -6,24 +6,20 @@ import { FaPlayCircle, FaPauseCircle } from "react-icons/fa";
 
 export default function EditAudioPage({ audioRef }) {
   const [wavesurfer, setWavesurfer] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currTime, setCurrTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [audioEl, setAudioEl] = useState(null);
   const [loopMode, setLoopMode] = useState(false);
   const [minPxPerSec, setMinPxPerSec] = useState(100);
-  const [isDragging, setIsDragging] = useState(false);
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
   const timelineRef = useRef(null);
   const wsContainerRef = useRef(null);
-  const rafId = useRef(null); // store requestAnimationFrame id
+  const activeRegion = useRef(null);
 
   useEffect(() => {
     if (audioRef?.current) setAudioEl(audioRef.current);
   }, [audioRef]);
-
-  // cleanup on unmount
-  useEffect(() => () => window.cancelAnimationFrame(rafId.current), []);
 
   const timeline = useMemo(
     () =>
@@ -44,16 +40,69 @@ export default function EditAudioPage({ audioRef }) {
 
   const regions = useMemo(() => RegionsPlugin.create(), []);
 
+  // Set up event handlers for regions
   useEffect(() => {
-    regions.enableDragSelection({
-      color: "rgba(255, 0, 0, 0.1)",
-    });
-  }, []);
+    if (!regions || !wavesurfer) return;
+
+    let activeLoopRAF = null;
+    const clearLoopRAF = () => {
+      if (activeLoopRAF) {
+        cancelAnimationFrame(activeLoopRAF);
+        activeLoopRAF = null;
+      }
+    };
+
+    const handleRegionOut = (region) => {
+      if (wavesurfer.isPlaying()) {
+        // Clear any pending loop RAF
+        clearLoopRAF();
+        // Schedule new loop
+        activeLoopRAF = requestAnimationFrame(() => {
+          wavesurfer.setTime(region.start);
+          activeLoopRAF = null;
+        });
+      }
+    };
+
+    const createdHandler = (region) => {
+      region.on("out", () => handleRegionOut(region));
+    };
+
+    const regionInHandler = (region) => {
+      activeRegion.current = region;
+    };
+
+    const regionOutHandler = (region) => {
+      if (activeRegion.current === region) {
+        region.play();
+      }
+    };
+
+    // Add event listeners
+    regions.on("region-created", createdHandler);
+    regions.on("region-in", regionInHandler);
+    regions.on("region-out", regionOutHandler);
+
+    // Cleanup function
+    return () => {
+      clearLoopRAF();
+      regions.un("region-created", createdHandler);
+      regions.un("region-in", regionInHandler);
+      regions.un("region-out", regionOutHandler);
+    };
+  }, [regions, wavesurfer]);
 
   const wsPlugins = useMemo(() => [timeline, regions], []);
 
-  // Smooth progress animation using requestAnimationFrame
-  const animateProgress = () => {
+  // Keep progress in sync with wavesurfer timeupdate
+  useEffect(() => {
+    if (!wavesurfer) return;
+
+    wavesurfer.on("timeupdate", updateProgress);
+    return () => wavesurfer.un("timeupdate", updateProgress);
+  }, [wavesurfer]);
+
+  const updateProgress = () => {
     if (!wavesurfer) return;
 
     const slider = document.querySelector("input[type='range']");
@@ -68,24 +117,25 @@ export default function EditAudioPage({ audioRef }) {
       "--value",
       ((currentTime / duration) * 100).toFixed(4) + "%"
     );
-
-    // Continue animation while audio is playing
-    if (wavesurfer.isPlaying()) {
-      rafId.current = window.requestAnimationFrame(animateProgress);
-    }
   };
 
   const handlePlayPause = () => {
     if (!wavesurfer) return;
 
-    wavesurfer.playPause();
-    setIsPlaying(wavesurfer.isPlaying());
+    const currRegion = regions.regions.at(-1);
+    setIsPlaying((prev) => !prev);
 
-    if (wavesurfer.isPlaying()) {
-      rafId.current = window.requestAnimationFrame(animateProgress);
+    if (
+      wavesurfer.getCurrentTime() < currRegion.start ||
+      wavesurfer.getCurrentTime() > currRegion.end
+    ) {
+      wavesurfer.setTime(currRegion.start);
+      wavesurfer.playPause();
     } else {
-      window.cancelAnimationFrame(rafId.current);
+      wavesurfer.playPause();
     }
+
+    updateProgress();
   };
 
   const handleWsClick = (e) => {
