@@ -16,6 +16,7 @@ export default function EditAudioPage({ audioRef }) {
   const timelineRef = useRef(null);
   const wsContainerRef = useRef(null);
   const activeRegion = useRef(null);
+  const loopModeRef = useRef(loopMode);
 
   useEffect(() => {
     if (audioRef?.current) setAudioEl(audioRef.current);
@@ -53,10 +54,9 @@ export default function EditAudioPage({ audioRef }) {
     };
 
     const handleRegionOut = (region) => {
-      if (wavesurfer.isPlaying()) {
-        // Clear any pending loop RAF
+      if (wavesurfer.isPlaying() && loopModeRef.current) {
+        // Only loop if loop mode is on
         clearLoopRAF();
-        // Schedule new loop
         activeLoopRAF = requestAnimationFrame(() => {
           wavesurfer.setTime(region.start);
           activeLoopRAF = null;
@@ -73,8 +73,13 @@ export default function EditAudioPage({ audioRef }) {
     };
 
     const regionOutHandler = (region) => {
-      if (activeRegion.current === region) {
-        region.play();
+      // Only loop back to start if we're playing AND loop mode is on
+      if (
+        activeRegion.current === region &&
+        wavesurfer.isPlaying() &&
+        loopModeRef.current
+      ) {
+        wavesurfer.setTime(region.start);
       }
     };
 
@@ -93,6 +98,10 @@ export default function EditAudioPage({ audioRef }) {
   }, [regions, wavesurfer]);
 
   const wsPlugins = useMemo(() => [timeline, regions], []);
+
+  useEffect(() => {
+    loopModeRef.current = loopMode;
+  }, [loopMode]);
 
   // Keep progress in sync with wavesurfer timeupdate
   useEffect(() => {
@@ -125,15 +134,18 @@ export default function EditAudioPage({ audioRef }) {
     const currRegion = regions.regions.at(-1);
     setIsPlaying((prev) => !prev);
 
-    if (
-      wavesurfer.getCurrentTime() < currRegion.start ||
-      wavesurfer.getCurrentTime() > currRegion.end
-    ) {
-      wavesurfer.setTime(currRegion.start);
-      wavesurfer.playPause();
-    } else {
-      wavesurfer.playPause();
-    }
+    // if (currRegion) {
+    //   if (
+    //     wavesurfer.getCurrentTime() < currRegion.start ||
+    //     wavesurfer.getCurrentTime() > currRegion.end
+    //   ) {
+    //     wavesurfer.setTime(currRegion.start);
+    //     wavesurfer.playPause();
+    //     return;
+    //   }
+    // }
+
+    wavesurfer.playPause();
 
     updateProgress();
   };
@@ -161,100 +173,104 @@ export default function EditAudioPage({ audioRef }) {
     return +wavesurfer.getScroll() / minPxPerSec;
   }
 
-  function handleTouchStart(e) {
-    if (!loopMode) return;
+  function markStart(e) {
+    if (!wavesurfer || !regions) return;
 
-    const rect = wsContainerRef.current.getBoundingClientRect();
-    const touchX = e.targetTouches[0].clientX - rect.left;
+    setLoopMode(true);
+    const curr = wavesurfer.getCurrentTime();
+    touchRegion.current.start = curr;
 
-    // convert X position to audio time
-    touchRegion.current.start = +touchX / minPxPerSec + getCurrScrollSec();
-    console.log(touchRegion.current.start);
-  }
-
-  const handleTouchMove = (e) => {
-    if (!loopMode || !wavesurfer) return;
-
-    const rect = wsContainerRef.current.getBoundingClientRect();
-    const touchX = e.targetTouches[0].clientX - rect.left;
-
-    touchRegion.current.end = +touchX / minPxPerSec + getCurrScrollSec();
-
-    if (!touchRegion.current.tempRegion) {
-      // Create initial region
-      touchRegion.current.tempRegion = regions.addRegion({
-        start: Math.min(touchRegion.current.start, touchRegion.current.end),
-        end: Math.max(touchRegion.current.start, touchRegion.current.end),
-        color: "rgba(255, 0, 0, 0.2)",
-        drag: false,
-        resize: true,
-      });
-    } else {
-      // Update existing region using setOptions
-      touchRegion.current.tempRegion.setOptions({
-        start: Math.min(touchRegion.current.start, touchRegion.current.end),
-        end: Math.max(touchRegion.current.start, touchRegion.current.end),
-      });
-    }
-  };
-
-  function handleTouchEnd(e) {
-    if (!loopMode || !touchRegion.current.start) return;
-
-    const region = touchRegion.current;
-
-    // Remove the temp region
-    if (region.tempRegion) {
-      region.tempRegion.remove();
-    }
-
-    // Add final region
-    if (region.end && region.start !== region.end) {
+    if (regions.getRegions().length === 0) {
+      touchRegion.current.end = wavesurfer.getDuration();
       regions.addRegion({
-        start: Math.min(region.start, region.end),
-        end: Math.max(region.start, region.end),
+        start: touchRegion.current.start,
+        end: touchRegion.current.end,
         color: "rgba(255, 0, 0, 0.1)",
       });
+    } else {
+      const r = regions.regions.at(0);
+      if (!r) return;
+
+      // ensure end is valid; if start is after end, extend end to duration
+      let newEnd = r.end ?? wavesurfer.getDuration();
+      if (curr >= newEnd) newEnd = wavesurfer.getDuration();
+
+      r.setOptions({
+        start: curr,
+        end: newEnd,
+        color: "rgba(255, 0, 0, 0.1)",
+      });
+
+      // Scroll to the modified region if it's out of view
+      wavesurfer.setTime(curr);
+    }
+  }
+
+  function markEnd(e) {
+    if (!wavesurfer || !regions) return;
+
+    setLoopMode(true);
+    const curr = wavesurfer.getCurrentTime();
+    touchRegion.current.end = curr;
+
+    if (regions.getRegions().length === 0) {
+      touchRegion.current.start = 0;
+      regions.addRegion({
+        start: touchRegion.current.start,
+        end: touchRegion.current.end,
+        color: "rgba(255, 0, 0, 0.1)",
+      });
+    } else {
+      const r = regions.regions.at(0);
+      if (!r) return;
+
+      let newStart = r.start ?? 0;
+      if (curr <= newStart) newStart = 0;
+
+      r.setOptions({
+        start: newStart,
+        end: curr,
+        color: "rgba(255, 0, 0, 0.1)",
+      });
+
+      // Scroll to the modified region if it's out of view
+      wavesurfer.setTime(curr);
     }
 
     // Reset
-    region.tempRegion = null;
-    region.start = null;
-    region.end = null;
+    touchRegion.current.tempRegion = null;
+    touchRegion.current.start = null;
+    touchRegion.current.end = null;
   }
 
   function handleLoopModeChange(e) {
     const newMode = !loopMode;
     setLoopMode(newMode);
 
-    const setTouchAction = (el, value) => {
-      if (el) el.style.touchAction = value;
-    };
-
-    const wrapper = wavesurfer.getWrapper();
-    const container = wrapper?.querySelector("div");
-    const touchValue = newMode ? "none" : "auto";
-
-    setTouchAction(wrapper, touchValue);
-    setTouchAction(container, touchValue);
+    // Update region appearance based on loop mode
+    const region = regions.regions.at(-1);
+    if (region) {
+      region.setOptions({
+        color: newMode ? "rgba(255, 0, 0, 0.1)" : "rgba(255, 0, 0, 0)",
+        // Show borders regardless of mode
+        borderColor: "rgba(255, 0, 0, 0.5)",
+        showBorders: true,
+      });
+    }
   }
 
   if (!audioEl) return <div>Loading audio…</div>;
 
   return (
     <>
-      <div>
+      <div className="flex flex-row gap-5">
         <button onClick={handleLoopModeChange}>
           {`Loop Mode: ${loopMode}`}
         </button>
+        <button onClick={markStart}>Start</button>
+        <button onClick={markEnd}>End</button>
       </div>
-      <div
-        ref={wsContainerRef}
-        className="touch-none select-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div ref={wsContainerRef} className="touch-none select-none">
         <WavesurferPlayer
           height={100}
           waveColor={getCssVar("--clr-surface-tonal-a50")}
@@ -266,13 +282,6 @@ export default function EditAudioPage({ audioRef }) {
           minPxPerSec={minPxPerSec}
           onReady={(ws) => {
             setWavesurfer(ws);
-
-            const wrapper = ws.getWrapper();
-            const container = wrapper?.querySelector("div");
-            const touchValue = loopMode ? "none" : "auto";
-
-            if (wrapper) wrapper.style.touchAction = touchValue;
-            if (container) container.style.touchAction = touchValue;
           }}
           onClick={handleWsClick}
           onPlay={() => setIsPlaying(true)}
