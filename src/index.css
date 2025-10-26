@@ -16,6 +16,21 @@
   --range-thumb-size: 20px;
 }
 
+/* Target all WaveSurfer regions */
+#waveform ::part(region) {
+  background-color: rgba(255, 0, 0, 0.1); /* semi-transparent red */
+}
+
+/* Left handle of any region */
+#waveform ::part(region-handle-left) {
+  background-color: #00ff00; /* green */
+}
+
+/* Right handle of any region */
+#waveform ::part(region-handle-right) {
+  background-color: #ff0000; /* red */
+}
+
 button:hover {
   cursor: pointer;
 }

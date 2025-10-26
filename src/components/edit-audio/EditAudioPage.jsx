@@ -182,11 +182,7 @@ export default function EditAudioPage({ audioRef }) {
 
     if (regions.getRegions().length === 0) {
       touchRegion.current.end = wavesurfer.getDuration();
-      regions.addRegion({
-        start: touchRegion.current.start,
-        end: touchRegion.current.end,
-        color: "rgba(255, 0, 0, 0.1)",
-      });
+      createRegion(touchRegion.current.start, touchRegion.current.end);
     } else {
       const r = regions.regions.at(0);
       if (!r) return;
@@ -215,11 +211,7 @@ export default function EditAudioPage({ audioRef }) {
 
     if (regions.getRegions().length === 0) {
       touchRegion.current.start = 0;
-      regions.addRegion({
-        start: touchRegion.current.start,
-        end: touchRegion.current.end,
-        color: "rgba(255, 0, 0, 0.1)",
-      });
+      createRegion(touchRegion.current.start, touchRegion.current.end);
     } else {
       const r = regions.regions.at(0);
       if (!r) return;
@@ -241,6 +233,14 @@ export default function EditAudioPage({ audioRef }) {
     touchRegion.current.tempRegion = null;
     touchRegion.current.start = null;
     touchRegion.current.end = null;
+  }
+
+  function createRegion(start, end) {
+    regions.addRegion({
+      start: start,
+      end: end,
+      color: "rgba(255, 0, 0, 0.1)",
+    });
   }
 
   function handleLoopModeChange(e) {
@@ -270,7 +270,11 @@ export default function EditAudioPage({ audioRef }) {
         <button onClick={markStart}>Start</button>
         <button onClick={markEnd}>End</button>
       </div>
-      <div ref={wsContainerRef} className="touch-none select-none">
+      <div
+        ref={wsContainerRef}
+        id="waveform"
+        className="touch-none select-none"
+      >
         <WavesurferPlayer
           height={100}
           waveColor={getCssVar("--clr-surface-tonal-a50")}
