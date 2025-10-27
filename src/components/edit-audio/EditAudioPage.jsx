@@ -3,6 +3,7 @@ import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { FaPlayCircle, FaPauseCircle } from "react-icons/fa";
+import clsx from "clsx";
 
 export default function EditAudioPage({ audioRef }) {
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -134,17 +135,6 @@ export default function EditAudioPage({ audioRef }) {
     const currRegion = regions.regions.at(-1);
     setIsPlaying((prev) => !prev);
 
-    // if (currRegion) {
-    //   if (
-    //     wavesurfer.getCurrentTime() < currRegion.start ||
-    //     wavesurfer.getCurrentTime() > currRegion.end
-    //   ) {
-    //     wavesurfer.setTime(currRegion.start);
-    //     wavesurfer.playPause();
-    //     return;
-    //   }
-    // }
-
     wavesurfer.playPause();
 
     updateProgress();
@@ -263,26 +253,19 @@ export default function EditAudioPage({ audioRef }) {
 
   return (
     <>
-      <div className="flex flex-row gap-5">
-        <button onClick={handleLoopModeChange}>
-          {`Loop Mode: ${loopMode}`}
-        </button>
-        <button onClick={markStart}>Start</button>
-        <button onClick={markEnd}>End</button>
-      </div>
       <div
-        ref={wsContainerRef}
         id="waveform"
-        className="touch-none select-none"
+        ref={wsContainerRef}
+        className="touch-none select-none overflow-hidden"
       >
         <WavesurferPlayer
-          height={100}
-          waveColor={getCssVar("--clr-surface-tonal-a50")}
+          height={300}
+          waveColor={getCssVar("--sub-alt-color")}
           backend="MediaElement"
           media={audioEl}
           responsive={true}
           normalize={true}
-          progressColor={getCssVar("--clr-primary-a20")}
+          progressColor={getCssVar("--text-color")}
           minPxPerSec={minPxPerSec}
           onReady={(ws) => {
             setWavesurfer(ws);
@@ -309,6 +292,20 @@ export default function EditAudioPage({ audioRef }) {
           />
         </>
       )}
+
+      <div className="flex flex-row justify-around">
+        <button
+          onClick={handleLoopModeChange}
+          className={clsx(
+            "px-6 py-2 rounded-md font-semibold",
+            loopMode
+              ? "bg-primary-100 text-base-dark"
+              : "bg-surface-200 text-base-light"
+          )}
+        >{`Loop`}</button>
+        <button onClick={markStart}>Start</button>
+        <button onClick={markEnd}>End</button>
+      </div>
 
       <div className="p-5 flex justify-center">
         {isPlaying ? (
