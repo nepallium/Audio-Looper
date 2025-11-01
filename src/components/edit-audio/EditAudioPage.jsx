@@ -4,13 +4,11 @@ import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { FaPlayCircle, FaPauseCircle } from "react-icons/fa";
 import clsx from "clsx";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useLocation } from "react-router-dom";
 import Controls from "./Controls.jsx";
-import getCssVar from "../../api/getCssVar.js";
+import getCssVar from "../../utils/getCssVar.js";
 
-export default function EditAudioPage() {
-  const { audioRef } = useOutletContext();
-
+export default function EditAudioPage({ audioRef }) {
   const [wavesurfer, setWavesurfer] = useState(null);
   const [currTime, setCurrTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
