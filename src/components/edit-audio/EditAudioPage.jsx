@@ -115,7 +115,7 @@ export default function EditAudioPage({ audioRef }) {
   const updateProgress = () => {
     if (!wavesurfer) return;
 
-    const slider = document.querySelector("input[type='range']");
+    const slider = timeSliderRef.current;
     if (!slider) return;
 
     const currentTime = wavesurfer.getCurrentTime();
