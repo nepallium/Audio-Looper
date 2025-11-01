@@ -4,9 +4,10 @@ import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { FaPlayCircle, FaPauseCircle } from "react-icons/fa";
 import clsx from "clsx";
-import { useOutletContext, useLocation } from "react-router-dom";
 import Controls from "./Controls.jsx";
 import getCssVar from "../../utils/getCssVar.js";
+import { SyncLoader } from "react-spinners";
+import WaveSurfer from "wavesurfer.js";
 
 export default function EditAudioPage({ audioRef }) {
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -14,6 +15,7 @@ export default function EditAudioPage({ audioRef }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioEl, setAudioEl] = useState(null);
   const [loopMode, setLoopMode] = useState(false);
+  const [isWaveReady, setIsWaveReady] = useState(false);
   const [minPxPerSec, setMinPxPerSec] = useState(100);
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
@@ -21,6 +23,7 @@ export default function EditAudioPage({ audioRef }) {
   const wsContainerRef = useRef(null);
   const activeRegion = useRef(null);
   const loopModeRef = useRef(loopMode);
+  const onReadyCalledRef = useRef(false);
 
   useEffect(() => {
     if (audioRef?.current) setAudioEl(audioRef.current);
@@ -30,14 +33,12 @@ export default function EditAudioPage({ audioRef }) {
     () =>
       TimelinePlugin.create({
         height: 24,
-        // insertPosition: "beforebegin",
         container: timeSliderRef,
         timeInterval: 0.2,
         primaryLabelInterval: 1,
-        // secondaryLabelInterval: 1,
         style: {
           fontSize: "20px",
-          color: "#2D5B88",
+          color: getCssVar("--main-color"),
         },
       }),
     []
@@ -59,7 +60,6 @@ export default function EditAudioPage({ audioRef }) {
 
     const handleRegionOut = (region) => {
       if (wavesurfer.isPlaying() && loopModeRef.current) {
-        // Only loop if loop mode is on
         clearLoopRAF();
         activeLoopRAF = requestAnimationFrame(() => {
           wavesurfer.setTime(region.start);
@@ -77,7 +77,6 @@ export default function EditAudioPage({ audioRef }) {
     };
 
     const regionOutHandler = (region) => {
-      // Only loop back to start if we're playing AND loop mode is on
       if (
         activeRegion.current === region &&
         wavesurfer.isPlaying() &&
@@ -87,12 +86,10 @@ export default function EditAudioPage({ audioRef }) {
       }
     };
 
-    // Add event listeners
     regions.on("region-created", createdHandler);
     regions.on("region-in", regionInHandler);
     regions.on("region-out", regionOutHandler);
 
-    // Cleanup function
     return () => {
       clearLoopRAF();
       regions.un("region-created", createdHandler);
@@ -180,7 +177,6 @@ export default function EditAudioPage({ audioRef }) {
       const r = regions.regions.at(0);
       if (!r) return;
 
-      // ensure end is valid; if start is after end, extend end to duration
       let newEnd = r.end ?? wavesurfer.getDuration();
       if (curr >= newEnd) newEnd = wavesurfer.getDuration();
 
@@ -190,7 +186,6 @@ export default function EditAudioPage({ audioRef }) {
         color: "rgba(255, 0, 0, 0.1)",
       });
 
-      // Scroll to the modified region if it's out of view
       wavesurfer.setTime(curr);
     }
   }
@@ -218,11 +213,9 @@ export default function EditAudioPage({ audioRef }) {
         color: "rgba(255, 0, 0, 0.1)",
       });
 
-      // Scroll to the modified region if it's out of view
       wavesurfer.setTime(curr);
     }
 
-    // Reset
     touchRegion.current.tempRegion = null;
     touchRegion.current.start = null;
     touchRegion.current.end = null;
@@ -240,29 +233,63 @@ export default function EditAudioPage({ audioRef }) {
     const newMode = !loopMode;
     setLoopMode(newMode);
 
-    // Update region appearance based on loop mode
     const region = regions.regions.at(-1);
     if (region) {
       region.setOptions({
         color: newMode ? "rgba(255, 0, 0, 0.1)" : "rgba(255, 0, 0, 0)",
-        // Show borders regardless of mode
         borderColor: "rgba(255, 0, 0, 0.5)",
         showBorders: true,
       });
     }
   }
 
+  const handleReady = (ws) => {
+    if (onReadyCalledRef.current) {
+      console.log("onReady called again, ignoring");
+      return;
+    }
+
+    onReadyCalledRef.current = true;
+    console.log("onReady called for first time");
+
+    // Set wavesurfer first
+    setWavesurfer(ws);
+
+    // Use a small timeout to ensure the waveform is actually rendered
+    const checkReady = () => {
+      const wrapper = ws.getWrapper();
+      if (wrapper && wrapper.querySelector("canvas")) {
+        console.log("waveform canvas found, setting ready");
+        setIsWaveReady(true);
+      } else {
+        console.log("canvas not found, waiting...");
+        setTimeout(checkReady, 50);
+      }
+    };
+
+    // Start checking after a brief delay
+    setTimeout(checkReady, 100);
+  };
+
   return (
-    <>
-      {!audioEl ? (
-        <div className="h-full flex justify-center items-center font-semibold text-[1rem] text-center">
-          <p>Loading waveform</p>
+    <div className="flex flex-col gap-3 h-full w-full">
+      {!isWaveReady && (
+        <div className="h-full flex flex-col justify-center items-center gap-4">
+          <p className="font-semibold text-[1.3rem] text-center">
+            Loading waveform
+          </p>
+          <SyncLoader color={getCssVar("--text-color")} margin={5} size={15} />
         </div>
-      ) : (
+      )}
+
+      {audioEl && (
         <div
           id="waveform"
           ref={wsContainerRef}
-          className="touch-none select-none overflow-hidden"
+          className={clsx(
+            "touch-none select-none overflow-hidden",
+            !isWaveReady && "opacity-0 pointer-events-none absolute"
+          )}
         >
           <WavesurferPlayer
             height={300}
@@ -273,9 +300,7 @@ export default function EditAudioPage({ audioRef }) {
             normalize={true}
             progressColor={getCssVar("--text-color")}
             minPxPerSec={minPxPerSec}
-            onReady={(ws) => {
-              setWavesurfer(ws);
-            }}
+            onReady={handleReady}
             onClick={handleWsClick}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
@@ -284,7 +309,7 @@ export default function EditAudioPage({ audioRef }) {
         </div>
       )}
 
-      {wavesurfer && (
+      {isWaveReady && (
         <>
           <div ref={timelineRef} style={{ width: "100%" }} />
           <input
@@ -311,7 +336,7 @@ export default function EditAudioPage({ audioRef }) {
             <button onClick={markEnd}>End</button>
           </div>
 
-          <div className="p-5 flex justify-center">
+          <div className="flex justify-center">
             {isPlaying ? (
               <FaPauseCircle
                 size={50}
@@ -331,6 +356,6 @@ export default function EditAudioPage({ audioRef }) {
           <Controls audioRef={audioRef} />
         </>
       )}
-    </>
+    </div>
   );
 }
