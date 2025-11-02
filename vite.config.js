@@ -10,5 +10,5 @@ export default defineConfig({
       "@": path.resolve(__dirname),
     },
   },
-  base: process.env.VITE_BASE_PATH || "/Audio-Looper",
+  // base: process.env.VITE_BASE_PATH || "/Audio-Looper",
 });
