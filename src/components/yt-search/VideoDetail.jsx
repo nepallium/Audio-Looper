@@ -28,9 +28,11 @@ const VideoDetail = ({ video }) => {
 
     const videoId = video.id.videoId;
     try {
-      const res = await fetch(`http://localhost:8000/api/audios/${videoId}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`
+        // `http://localhost:8000/api/audios/${videoId}`
+      );
       if (!res.ok) throw new Error("Failed to fetch video with id: " + videoId);
-
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
 
@@ -42,9 +44,7 @@ const VideoDetail = ({ video }) => {
       setIsLoading(false);
     }
   }
-  console.log(isIframeReady);
 
-  const videoSrc = `https://www.youtube.com/embed/${video.id.videoId}`;
   return (
     <>
       {!isIframeReady && (
@@ -63,7 +63,7 @@ const VideoDetail = ({ video }) => {
           <iframe
             className="w-full h-full"
             title="video player"
-            src={videoSrc}
+            src={`https://www.youtube.com/embed/${video.id.videoId}`}
             onLoad={() => setIsIframeReady(true)}
             allowFullScreen
           />
