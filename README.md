@@ -1,12 +1,31 @@
-# React + Vite
+# Audio Looper (Work in Progress)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AudioLooper is a mobile-first web-based practice tool designed for musicians who want to slow down, loop, and transpose songs directly in their browser. Instead of usual tools that require users to upload an audio file, Audio Looper allows users to choose a song directly from the app's Youtube search integration.
+Built with React and WaveSurfer.js, it provides a smooth, modern interface for focused practice sessions.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Status
 
-## Expanding the ESLint configuration
+This project is currently in development.  
+Core functionality (playback, looping, pitch shifting) is being implemented, and the UI design is still evolving.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Features
+
+- Interactive waveform display for visualizing and scrubbing through tracks
+- Create, edit, and save multiple loops (stored locally)
+- Slow down or speed up playback while preserving pitch
+- Transpose songs by up to ±12 semitones
+- Stem separation (planned): isolate or remove vocals, drums, or instruments
+- Local persistence of loops and settings using `IndexedDB`
+- Mobile-first design optimized for both mobile and desktop browsers
+
+---
+
+## Tech Stack
+
+- React + Vite – frontend framework and dev environment
+- WaveSurfer.js – waveform visualization and interaction
+- Tailwind CSS – styling and responsive design
