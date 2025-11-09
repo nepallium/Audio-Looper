@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef } from "react";
 import { BarLoader, SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { useNavigate } from "react-router-dom";
@@ -37,7 +37,7 @@ const VideoDetail = ({ video }) => {
       const blobUrl = URL.createObjectURL(blob);
 
       // Done loading → navigate
-      navigate("/audio-editor", { state: { videoId, blobUrl } });
+      navigate("/audio-editor", { state: { video, blobUrl } });
     } catch (err) {
       console.error(err);
     } finally {
@@ -68,9 +68,14 @@ const VideoDetail = ({ video }) => {
             allowFullScreen
           />
         </div>
-        <div className="w-[85%] min-h-[65px] flex justify-center items-center mb-2 px-6 py-3 rounded-lg bg-primary-100 text-white font-semibold">
+        <div
+          onClick={() => {
+            if (!isLoading) handleAnalyze();
+          }}
+          className="w-[85%] min-h-[65px] flex justify-center items-center mb-2 px-6 py-3 rounded-lg bg-primary-100 text-white font-semibold"
+        >
           {!isLoading ? (
-            <button onClick={handleAnalyze}>Analyze this video</button>
+            <button>Analyze this video</button>
           ) : (
             <div className="flex flex-col justify-center items-center gap-1">
               <div>Downloading audio</div>

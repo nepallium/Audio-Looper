@@ -8,6 +8,7 @@ import Controls from "./Controls.jsx";
 import getCssVar from "../../utils/getCssVar.js";
 import { SyncLoader } from "react-spinners";
 import WaveSurfer from "wavesurfer.js";
+import isMobileDevice from "../../utils/isMobileDevice.js";
 
 export default function EditAudioPage({ audioRef }) {
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -294,12 +295,13 @@ export default function EditAudioPage({ audioRef }) {
           <WavesurferPlayer
             height={300}
             waveColor={getCssVar("--sub-alt-color")}
-            backend="MediaElement"
+            backend="WebAudio"
             media={audioEl}
-            responsive={true}
-            normalize={true}
+            responsive={!isMobileDevice()}
+            normalize={isMobileDevice()}
             progressColor={getCssVar("--text-color")}
-            minPxPerSec={minPxPerSec}
+            minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
+            pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
             onReady={handleReady}
             onClick={handleWsClick}
             onPlay={() => setIsPlaying(true)}
@@ -353,7 +355,7 @@ export default function EditAudioPage({ audioRef }) {
               />
             )}
           </div>
-          <Controls audioRef={audioRef} />
+          <Controls audioRef={audioRef} wavesurfer={wavesurfer} />
         </>
       )}
     </div>

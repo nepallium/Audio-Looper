@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
 
-export default function Controls({ audioRef }) {
+export default function Controls({ audioRef, wavesurfer }) {
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 
@@ -44,8 +44,9 @@ export default function Controls({ audioRef }) {
 
   const onTempoChange = ({ target: { value } }) => {
     setTempoValue(value);
-    audioRef.current.preservesPitch = true;
-    audioRef.current.playbackRate = +value;
+    // audioRef.current.preservesPitch = true;
+    // audioRef.current.playbackRate = +value;
+    wavesurfer.setPlaybackRate(+value, true);
   };
 
   const onKeyChange = ({ target: { value } }) => {

@@ -1,3 +1,4 @@
+// @ts-ignore
 import { SoundTouch } from "soundtouchjs";
 class SoundTouchWorklet extends AudioWorkletProcessor {
   static get parameterDescriptors() {
@@ -15,7 +16,7 @@ class SoundTouchWorklet extends AudioWorkletProcessor {
   }
   constructor() {
     super();
-    this.bufferSize = 128;
+    this.bufferSize = 512;
     this._samples = new Float32Array(this.bufferSize * 2);
     this._pipe = new SoundTouch();
   }
