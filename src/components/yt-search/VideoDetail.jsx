@@ -3,6 +3,7 @@ import { BarLoader, SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
+import { saveTmpAudioToDB } from "../../api/indexedDB";
 
 const baseStyles =
   "rounded-lg bg-surface-200 shadow flex flex-col items-center w-full";
@@ -28,16 +29,21 @@ const VideoDetail = ({ video }) => {
 
     const videoId = video.id.videoId;
     try {
+      console.log("Starting analyze for video:", video.id.videoId);
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`
         // `http://localhost:8000/api/audios/${videoId}`
       );
+      console.log("Fetch response ok?", res.ok);
       if (!res.ok) throw new Error("Failed to fetch video with id: " + videoId);
       const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      console.log("Blob size:", blob.size);
+      // const blobUrl = URL.createObjectURL(blob);
+      await saveTmpAudioToDB(videoId, blob);
+      console.log("Saved to IndexedDB");
 
       // Done loading → navigate
-      navigate("/audio-editor", { state: { video, blobUrl } });
+      navigate("/audio-editor", { state: { videoId, video } });
     } catch (err) {
       console.error(err);
     } finally {

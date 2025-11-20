@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useLayoutEffect } from "react";
 import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
@@ -9,15 +9,21 @@ import getCssVar from "../../utils/getCssVar.js";
 import { SyncLoader } from "react-spinners";
 import WaveSurfer from "wavesurfer.js";
 import isMobileDevice from "../../utils/isMobileDevice.js";
+import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
+import { saveLoops } from "../../api/indexedDB.js";
+import Modal from "react-modal";
 
-export default function EditAudioPage({ audioRef }) {
+Modal.setAppElement("#root");
+
+export default function EditAudioPage({ audioEl, audioRef, video }) {
   const [wavesurfer, setWavesurfer] = useState(null);
   const [currTime, setCurrTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioEl, setAudioEl] = useState(null);
   const [loopMode, setLoopMode] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
   const [minPxPerSec, setMinPxPerSec] = useState(100);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [audioName, setAudioName] = useState(""); // database names
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
   const timelineRef = useRef(null);
@@ -25,10 +31,26 @@ export default function EditAudioPage({ audioRef }) {
   const activeRegion = useRef(null);
   const loopModeRef = useRef(loopMode);
   const onReadyCalledRef = useRef(false);
+  const audioNameInputRef = useRef(null);
 
+  // auto select input txt audio on modal open
   useEffect(() => {
-    if (audioRef?.current) setAudioEl(audioRef.current);
-  }, [audioRef]);
+    if (isModalOpen) {
+      // reset value first
+      setAudioName(decodeHtmlEntities(video.snippet.title));
+
+      // Delay selection until after the input updates
+      setTimeout(() => {
+        if (audioNameInputRef.current) {
+          audioNameInputRef.current.focus();
+          audioNameInputRef.current.setSelectionRange(
+            0,
+            audioNameInputRef.current.value.length
+          );
+        }
+      }, 0);
+    }
+  }, [isModalOpen, video.snippet.title]);
 
   const timeline = useMemo(
     () =>
@@ -272,8 +294,34 @@ export default function EditAudioPage({ audioRef }) {
     setTimeout(checkReady, 100);
   };
 
+  async function onSave() {
+    const serializedRegions = regions.getRegions().map((r) => ({
+      id: r.id,
+      start: r.start,
+      end: r.end,
+      color: r.color,
+      drag: r.drag,
+      resize: r.resize,
+      resizeStart: r.resizeStart,
+      resizeEnd: r.resizeEnd,
+    }));
+
+    const ok = await saveLoops(
+      video.id.videoId,
+      audioName,
+      video,
+      serializedRegions
+    );
+    if (ok) {
+      console.log("saved");
+      // TODO slide modal from top saying saved!
+
+      setIsModalOpen(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3 h-full w-full">
+    <div className="flex flex-col h-full w-full">
       {!isWaveReady && (
         <div className="h-full flex flex-col justify-center items-center gap-4">
           <p className="font-semibold text-[1.3rem] text-center">
@@ -292,6 +340,9 @@ export default function EditAudioPage({ audioRef }) {
             !isWaveReady && "opacity-0 pointer-events-none absolute"
           )}
         >
+          <p className="font-semibold text-xl mb-4 text-center text-balance line-clamp-2">
+            {decodeHtmlEntities(video.snippet.title)}
+          </p>
           <WavesurferPlayer
             height={300}
             waveColor={getCssVar("--sub-alt-color")}
@@ -324,7 +375,7 @@ export default function EditAudioPage({ audioRef }) {
             ref={timeSliderRef}
           />
 
-          <div className="flex flex-row justify-around">
+          <div className="flex flex-row justify-around my-5">
             <button
               onClick={handleLoopModeChange}
               className={clsx(
@@ -336,6 +387,7 @@ export default function EditAudioPage({ audioRef }) {
             >{`Loop`}</button>
             <button onClick={markStart}>Start</button>
             <button onClick={markEnd}>End</button>
+            <button onClick={() => setIsModalOpen(true)}>Save</button>
           </div>
 
           <div className="flex justify-center">
@@ -358,6 +410,33 @@ export default function EditAudioPage({ audioRef }) {
           <Controls audioRef={audioRef} wavesurfer={wavesurfer} />
         </>
       )}
+      <div className="flex items-center justify-center">
+        <Modal
+          isOpen={isModalOpen}
+          className="flex flex-col gap-8 bg-surface-200 max-w-[400px] w-[80%] text-lg text-base-light px-6 py-4 rounded-md"
+          overlayClassName="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[50]"
+          contentLabel="Save Loops Modal"
+        >
+          <p className="font-semibold text-2xl mb-4">Save audio loops?</p>
+          <input
+            id="name"
+            name="name"
+            autoFocus
+            autoComplete="false"
+            placeholder="Loop name"
+            value={audioName}
+            onChange={(e) => setAudioName(e.target.value)}
+            ref={audioNameInputRef}
+            className="text-base-dark bg-base-light rounded-md p-3 
+            border-3 border-transparent 
+            focus:outline-none focus:border-3 focus:border-primary-100"
+          />
+          <div className="flex flex-row gap-6 justify-end">
+            <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button onClick={onSave}>Save</button>
+          </div>
+        </Modal>
+      </div>
     </div>
   );
 }

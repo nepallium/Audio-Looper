@@ -30,6 +30,6 @@ app.get("/api/audios/:videoId", getYtAudio);
 //     () => console.log("succesfully written into json")
 // );
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
