@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import EditAudioPage from "./edit-audio/EditAudioPage";
-import { loadTmpAudioFromDB } from "../api/indexedDB";
+import { loadAudioFromDB } from "../api/indexedDB";
 
 export default function App() {
   const audioRef = useRef(null);
@@ -15,7 +15,7 @@ export default function App() {
 
   useEffect(() => {
     async function generateBlobUrl() {
-      let { blobObj } = await loadTmpAudioFromDB(videoId);
+      let { blobObj } = await loadAudioFromDB(videoId);
       if (!blobObj) {
         // route to main page or show no audio loaded page
       }

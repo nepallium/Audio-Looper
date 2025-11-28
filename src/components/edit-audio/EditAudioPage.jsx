@@ -426,6 +426,7 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
             placeholder="Loop name"
             value={audioName}
             onChange={(e) => setAudioName(e.target.value)}
+            onRequestClose={() => setIsModalOpen(false)}
             ref={audioNameInputRef}
             className="text-base-dark bg-base-light rounded-md p-3 
             border-3 border-transparent 

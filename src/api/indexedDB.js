@@ -26,12 +26,27 @@ export async function saveTmpAudioToDB(key, blob) {
   return true;
 }
 
-export async function loadTmpAudioFromDB(key) {
+export async function loadAudioFromDB(key) {
   const db = await openDB();
   const tx = db.transaction("audios", "readonly");
   const result = await new Promise((resolve) => {
     const req = tx.objectStore("audios").get(key);
     req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+
+  return result;
+}
+
+export async function isAudioIdExists(key) {
+  const db = await openDB();
+  const tx = db.transaction("audios", "readonly");
+  const result = await new Promise((resolve) => {
+    const req = tx.objectStore("audios").count(key);
+    req.onsuccess = (e) => {
+      const count = e.target.result;
+      resolve(count > 0);
+    };
     req.onerror = () => resolve(null);
   });
 
