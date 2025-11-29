@@ -74,14 +74,15 @@ const AudiosSearchPage = () => {
     <div className="flex flex-col page-layout text-base-light">
       <h1 className="header">Saved Audios</h1>
 
-      <div className="p-4 flex-1 flex flex-col overflow-hidden">
+      {/* main area: make it grow so inner scroll can be constrained */}
+      <div className="p-4 flex flex-col flex-1 min-h-0">
         {audios.length === 0 ? (
           <p className="text-center text-lg mt-4">
             Saved audios will appear here
           </p>
         ) : (
           <>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 flex-1 min-h-0">
               <div className="flex items-center justify-between">
                 <p className="ml-2">{`${audios.length} saved ${
                   audios.length > 1 ? "audios" : "audio"
@@ -93,7 +94,7 @@ const AudiosSearchPage = () => {
                   Delete All
                 </button>
               </div>
-              <div>
+              <div className="flex flex-col gap-4 bg-surface-200 rounded-lg p-2 flex-1 min-h-0">
                 <SearchBar setAudios={setAudios} />
                 <AudioList audios={audios} />
               </div>
