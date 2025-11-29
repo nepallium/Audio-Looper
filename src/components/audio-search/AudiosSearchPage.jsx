@@ -8,7 +8,7 @@ import getCssVar from "../../utils/getCssVar";
 const AudiosSearchPage = () => {
   const [audios, setAudios] = useState(null);
   const [error, setError] = useState(null);
-  const [storageInfo, setStorageInfo] = useState(null);
+  const [sizeInMB, setSizeInMB] = useState(null);
 
   useEffect(() => {
     async function loadAudios() {
@@ -22,18 +22,23 @@ const AudiosSearchPage = () => {
         } else {
           setAudios(res);
 
-          // Calculate approximate size
-          const sizeInBytes = new Blob([JSON.stringify(res)]).size;
-          const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+          // Calculate approximate audios size in MB
+          let totalSize = 0;
 
-          setStorageInfo({
-            usedMB: sizeInMB,
-            quotaMB: "Unknown",
-            percentUsed: "Unknown",
-          });
-          console.log("Sample audio object:", res[0]);
+          for (const audio of res) {
+            // Size of metadata (exclude blobObj from JSON calculation)
+            const metadata = { ...audio, blobObj: undefined };
+            const metadataSize = new Blob([JSON.stringify(metadata)]).size;
 
-          console.log(`Approximate data size: ${sizeInMB} MB`);
+            // Size of actual audio blob
+            const blobSize = audio.blobObj ? audio.blobObj.size : 0;
+
+            totalSize += metadataSize + blobSize;
+          }
+
+          const size = (totalSize / (1024 * 1024)).toFixed(2);
+
+          setSizeInMB(size);
         }
       } catch (err) {
         console.error("Could not load existing audios:", err);
@@ -75,7 +80,8 @@ const AudiosSearchPage = () => {
           <>
             <p>{`${audios.length} saved ${
               audios.length > 1 ? "audios" : "audio"
-            } 
+            } | 
+            ${sizeInMB}MB
             `}</p>
             <SearchBar setAudios={setAudios} />
             <AudioList audios={audios} />
