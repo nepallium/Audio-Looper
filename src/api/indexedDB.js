@@ -58,14 +58,20 @@ export async function saveLoops(key, audioName, video, regions) {
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
 
-  const existing = await store.get(key);
+  const existing = await new Promise((resolve, reject) => {
+    const request = store.get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  // console.log(existing);
   const updated = {
     ...existing,
-    id: key,
     name: audioName,
     video: video,
     regions: regions,
   };
+  // console.log(updated);
   await store.put(updated);
   await tx.done;
   return true;
