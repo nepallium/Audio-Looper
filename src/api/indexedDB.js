@@ -111,3 +111,24 @@ export function getStorageUsage() {
     });
   }
 }
+
+export async function getAudiosByName(searchTerm) {
+  const db = await openDB();
+  const tx = db.transaction("audios", "readonly");
+  const store = tx.objectStore("audios");
+
+  const allAudios = await new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  if (!searchTerm || searchTerm.trim() === "") {
+    return allAudios; // Return all if no search term
+  }
+
+  const lowerSearch = searchTerm.toLowerCase().trim();
+  return allAudios.filter((audio) =>
+    audio.name.toLowerCase().includes(lowerSearch)
+  );
+}

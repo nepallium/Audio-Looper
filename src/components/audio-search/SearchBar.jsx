@@ -1,12 +1,15 @@
 import React, { useState } from "react";
+import { getAudiosByName } from "../../api/indexedDB";
 
 export default function SearchBar({ setAudios }) {
   const [term, setTerm] = useState("");
 
-  const onSubmit = (event) => {
+  const onSubmit = async (event) => {
     event.preventDefault();
 
-    onFormSubmit(term);
+    const audios = await getAudiosByName(term);
+
+    setAudios(audios);
   };
 
   return (
