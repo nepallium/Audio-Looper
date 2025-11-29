@@ -379,15 +379,22 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
             <button
               onClick={handleLoopModeChange}
               className={clsx(
-                "px-6 py-2 rounded-md font-semibold",
-                loopMode
-                  ? "bg-primary-100 text-base-dark"
-                  : "bg-surface-200 text-base-light"
+                "regular-button",
+                loopMode && "bg-primary-100 text-base-dark"
               )}
             >{`Loop`}</button>
-            <button onClick={markStart}>Start</button>
-            <button onClick={markEnd}>End</button>
-            <button onClick={() => setIsModalOpen(true)}>Save</button>
+            <button className="regular-button" onClick={markStart}>
+              Start
+            </button>
+            <button className="regular-button" onClick={markEnd}>
+              End
+            </button>
+            <button
+              className="regular-button"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Save
+            </button>
           </div>
 
           <div className="flex justify-center">

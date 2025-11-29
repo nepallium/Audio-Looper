@@ -25,6 +25,10 @@
   @apply text-center bg-surface-200 p-6 text-2xl font-semibold tracking-wide border-b-4 border-surface-300;
 }
 
+.regular-button {
+  @apply px-6 py-2 rounded-md font-semibold bg-surface-200 text-base-light;
+}
+
 #waveform ::part(region) {
   background-color: rgb(var(--main-color-rgb), 0.3);
   pointer-events: none;

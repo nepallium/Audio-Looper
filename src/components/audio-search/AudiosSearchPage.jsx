@@ -4,11 +4,14 @@ import AudioList from "./AudioList";
 import SearchBar from "./SearchBar";
 import { SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
+import Modal from "react-modal";
+import { IoWarning } from "react-icons/io5";
 
 const AudiosSearchPage = () => {
   const [audios, setAudios] = useState(null);
   const [error, setError] = useState(null);
   const [sizeInMB, setSizeInMB] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadAudios() {
@@ -78,15 +81,55 @@ const AudiosSearchPage = () => {
           </p>
         ) : (
           <>
-            <p>{`${audios.length} saved ${
-              audios.length > 1 ? "audios" : "audio"
-            } | 
-            ${sizeInMB}MB
-            `}</p>
-            <SearchBar setAudios={setAudios} />
-            <AudioList audios={audios} />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="ml-2">{`${audios.length} saved ${
+                  audios.length > 1 ? "audios" : "audio"
+                } | ${sizeInMB}MB`}</p>
+                <button
+                  className="regular-button"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Delete All
+                </button>
+              </div>
+              <div>
+                <SearchBar setAudios={setAudios} />
+                <AudioList audios={audios} />
+              </div>
+            </div>
           </>
         )}
+      </div>
+      <div className="flex items-center justify-center">
+        <Modal
+          isOpen={isModalOpen}
+          onRequestClose={() => setIsModalOpen(false)}
+          className="flex flex-col gap-8 bg-surface-200 max-w-[400px] w-[80%] text-lg text-base-light px-6 py-4 rounded-md"
+          overlayClassName="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[50]"
+          contentLabel="Save Loops Modal"
+        >
+          <p className="font-bold tracking-wide text-2xl mb-3">
+            Delete all loops
+          </p>
+          <div className="flex gap-3 items-center justify-center">
+            <IoWarning size="2rem" color={getCssVar("--error-color")} />
+            <p className="text-lg text-error font-semibold">
+              This action is irreversible
+            </p>
+          </div>
+          <div className="flex flex-row gap-6 justify-end">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="regular-button bg-primary-100 text-base-dark"
+            >
+              Cancel
+            </button>
+            <button className="regular-button bg-surface-100 opacity-90">
+              Delete All
+            </button>
+          </div>
+        </Modal>
       </div>
     </div>
   );
