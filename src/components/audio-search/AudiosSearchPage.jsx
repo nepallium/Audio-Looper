@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getAudios } from "../../api/indexedDB";
 import AudioList from "./AudioList";
 import SearchBar from "./SearchBar";
@@ -11,7 +11,8 @@ const AudiosSearchPage = () => {
   const [audios, setAudios] = useState(null);
   const [error, setError] = useState(null);
   const [sizeInMB, setSizeInMB] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
+  const isDbEmpty = useRef(false);
 
   useEffect(() => {
     async function loadAudios() {
@@ -24,24 +25,7 @@ const AudiosSearchPage = () => {
           setAudios([]); // Set to empty array if no data
         } else {
           setAudios(res);
-
-          // Calculate approximate audios size in MB
-          let totalSize = 0;
-
-          for (const audio of res) {
-            // Size of metadata (exclude blobObj from JSON calculation)
-            const metadata = { ...audio, blobObj: undefined };
-            const metadataSize = new Blob([JSON.stringify(metadata)]).size;
-
-            // Size of actual audio blob
-            const blobSize = audio.blobObj ? audio.blobObj.size : 0;
-
-            totalSize += metadataSize + blobSize;
-          }
-
-          const size = (totalSize / (1024 * 1024)).toFixed(2);
-
-          setSizeInMB(size);
+          isDbEmpty.current = false;
         }
       } catch (err) {
         console.error("Could not load existing audios:", err);
@@ -52,6 +36,28 @@ const AudiosSearchPage = () => {
 
     loadAudios();
   }, []);
+
+  useEffect(() => {
+    if (audios) {
+      // Calculate approximate audios size in MB
+      let totalSize = 0;
+
+      for (const audio of audios) {
+        // Size of metadata (exclude blobObj from JSON calculation)
+        const metadata = { ...audio, blobObj: undefined };
+        const metadataSize = new Blob([JSON.stringify(metadata)]).size;
+
+        // Size of actual audio blob
+        const blobSize = audio.blobObj ? audio.blobObj.size : 0;
+
+        totalSize += metadataSize + blobSize;
+      }
+
+      const size = (totalSize / (1024 * 1024)).toFixed(2);
+
+      setSizeInMB(size);
+    }
+  }, [audios]);
 
   if (error) {
     return (
@@ -76,31 +82,31 @@ const AudiosSearchPage = () => {
 
       {/* main area: make it grow so inner scroll can be constrained */}
       <div className="p-4 flex flex-col flex-1 min-h-0">
-        {audios.length === 0 ? (
-          <p className="text-center text-lg mt-4">
-            Saved audios will appear here
-          </p>
-        ) : (
-          <>
-            <div className="flex flex-col gap-3 flex-1 min-h-0">
-              <div className="flex items-center justify-between">
-                <p className="ml-2">{`${audios.length} saved ${
-                  audios.length > 1 ? "audios" : "audio"
-                } | ${sizeInMB}MB`}</p>
-                <button
-                  className="regular-button"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Delete All
-                </button>
-              </div>
-              <div className="flex flex-col gap-4 bg-surface-200 rounded-lg p-2 flex-1 min-h-0">
-                <SearchBar setAudios={setAudios} />
-                <AudioList audios={audios} />
-              </div>
-            </div>
-          </>
-        )}
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
+          <div className="flex items-center justify-between">
+            <p className="ml-2">{`${audios.length} saved ${
+              audios.length === 1 ? "audio" : "audios"
+            } | ${sizeInMB}MB`}</p>
+            <button
+              className="regular-button"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Delete All
+            </button>
+          </div>
+          <div className="flex flex-col gap-4 bg-surface-200 rounded-lg p-2 flex-1 min-h-0">
+            <SearchBar setAudios={setAudios} />
+            {audios.length === 0 ? (
+              <p className="text-center text-lg mt-4">
+                {isDbEmpty.current
+                  ? "Saved audios will appear here"
+                  : "No audios found with search term"}
+              </p>
+            ) : (
+              <AudioList audios={audios} />
+            )}
+          </div>
+        </div>
       </div>
       <div className="flex items-center justify-center">
         <Modal

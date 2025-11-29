@@ -1,20 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getAudiosByName } from "../../api/indexedDB";
+import useDebounce from "../../hooks/useDebounce";
 
 export default function SearchBar({ setAudios }) {
   const [term, setTerm] = useState("");
 
-  const onSubmit = async (event) => {
-    event.preventDefault();
+  const debouncedSearchTerm = useDebounce(term);
 
-    const audios = await getAudiosByName(term);
+  useEffect(() => {
+    async function searchAudios() {
+      const audios = await getAudiosByName(debouncedSearchTerm);
+      setAudios(audios);
+    }
 
-    setAudios(audios);
-  };
+    searchAudios();
+  }, [debouncedSearchTerm]);
 
   return (
     <div className="w-full max-w-xl mx-auto">
-      <form onSubmit={onSubmit} className="w-full">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+        className="w-full"
+      >
         <div className="flex flex-col gap-2">
           <input
             type="text"
