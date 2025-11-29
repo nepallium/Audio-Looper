@@ -6,10 +6,23 @@
   :root {
     font-family: "Inter", sans-serif;
   }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 .page-layout {
-  @apply p-4 bg-surface-100 h-full;
+  @apply bg-surface-100 h-full;
+}
+
+.header {
+  @apply text-center bg-surface-200 p-6 text-2xl font-semibold tracking-wide border-b-4 border-surface-300;
 }
 
 #waveform ::part(region) {

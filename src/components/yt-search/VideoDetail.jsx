@@ -39,8 +39,9 @@ const VideoDetail = ({ video }) => {
           // `http://localhost:8000/api/audios/${videoId}`
         );
         console.log("Fetch response ok?", res.ok);
-        if (!res.ok)
+        if (!res.ok) {
           throw new Error("Failed to fetch video with id: " + videoId);
+        }
         const blob = await res.blob();
         // console.log("Blob size:", blob.size);
         // const blobUrl = URL.createObjectURL(blob);

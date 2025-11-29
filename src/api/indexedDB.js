@@ -70,3 +70,38 @@ export async function saveLoops(key, audioName, video, regions) {
   await tx.done;
   return true;
 }
+
+export async function getAudios() {
+  const db = await openDB();
+  const tx = db.transaction("audios", "readonly");
+  const store = tx.objectStore("audios");
+  const result = await new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = (event) => {
+      // The result of getAll() is the array of all objects in the store
+      const allElements = event.target.result;
+      // console.log(allElements);
+      resolve(allElements);
+    };
+
+    request.onerror = (event) => reject(event.target.error);
+  });
+
+  // console.log(result);
+  return result;
+}
+
+export function getStorageUsage() {
+  // Check storage quota and usage
+  if (navigator.storage && navigator.storage.estimate) {
+    navigator.storage.estimate().then((estimate) => {
+      const usedMB = (estimate.usage / (1024 * 1024)).toFixed(2);
+      const quotaMB = (estimate.quota / (1024 * 1024)).toFixed(2);
+      const percentUsed = ((estimate.usage / estimate.quota) * 100).toFixed(2);
+
+      console.log(`Used: ${usedMB} MB`);
+      console.log(`Quota: ${quotaMB} MB`);
+      console.log(`Percent used: ${percentUsed}%`);
+    });
+  }
+}

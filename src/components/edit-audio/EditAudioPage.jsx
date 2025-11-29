@@ -413,11 +413,12 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
       <div className="flex items-center justify-center">
         <Modal
           isOpen={isModalOpen}
+          onRequestClose={() => setIsModalOpen(false)}
           className="flex flex-col gap-8 bg-surface-200 max-w-[400px] w-[80%] text-lg text-base-light px-6 py-4 rounded-md"
           overlayClassName="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[50]"
           contentLabel="Save Loops Modal"
         >
-          <p className="font-semibold text-2xl mb-4">Save audio loops?</p>
+          <p className="font-semibold text-2xl mb-4">Save audio loops</p>
           <input
             id="name"
             name="name"
@@ -426,7 +427,6 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
             placeholder="Loop name"
             value={audioName}
             onChange={(e) => setAudioName(e.target.value)}
-            onRequestClose={() => setIsModalOpen(false)}
             ref={audioNameInputRef}
             className="text-base-dark bg-base-light rounded-md p-3 
             border-3 border-transparent 
