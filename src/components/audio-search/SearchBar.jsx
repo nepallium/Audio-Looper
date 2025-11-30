@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getAudiosByName } from "../../api/indexedDB";
 import useDebounce from "../../hooks/useDebounce";
 
-export default function SearchBar({ setAudios }) {
+export default function SearchBar({ setFilteredAudios }) {
   const [term, setTerm] = useState("");
 
   const debouncedSearchTerm = useDebounce(term);
@@ -10,7 +10,7 @@ export default function SearchBar({ setAudios }) {
   useEffect(() => {
     async function searchAudios() {
       const audios = await getAudiosByName(debouncedSearchTerm);
-      setAudios(audios);
+      setFilteredAudios(audios);
     }
 
     searchAudios();
