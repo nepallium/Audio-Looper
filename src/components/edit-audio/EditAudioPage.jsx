@@ -11,9 +11,7 @@ import WaveSurfer from "wavesurfer.js";
 import isMobileDevice from "../../utils/isMobileDevice.js";
 import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
 import { saveLoops } from "../../api/indexedDB.js";
-import Modal from "react-modal";
-
-Modal.setAppElement("#root");
+import CustomModal from "../CustomModal.jsx";
 
 export default function EditAudioPage({ audioEl, audioRef, video }) {
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -417,34 +415,29 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
           <Controls audioRef={audioRef} wavesurfer={wavesurfer} />
         </>
       )}
-      <div className="flex items-center justify-center">
-        <Modal
-          isOpen={isModalOpen}
-          onRequestClose={() => setIsModalOpen(false)}
-          className="flex flex-col gap-8 bg-surface-200 max-w-[400px] w-[80%] text-lg text-base-light px-6 py-4 rounded-md"
-          overlayClassName="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[50]"
-          contentLabel="Save Loops Modal"
-        >
-          <p className="font-semibold text-2xl mb-4">Save audio loops</p>
-          <input
-            id="name"
-            name="name"
-            autoFocus
-            autoComplete="false"
-            placeholder="Loop name"
-            value={audioName}
-            onChange={(e) => setAudioName(e.target.value)}
-            ref={audioNameInputRef}
-            className="text-base-dark bg-base-light rounded-md p-3 
-            border-3 border-transparent 
-            focus:outline-none focus:border-3 focus:border-primary-100"
-          />
-          <div className="flex flex-row gap-6 justify-end">
+      <CustomModal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        title="Save audio loops"
+        footer={
+          <>
             <button onClick={() => setIsModalOpen(false)}>Cancel</button>
             <button onClick={onSave}>Save</button>
-          </div>
-        </Modal>
-      </div>
+          </>
+        }
+      >
+        <input
+          id="name"
+          name="name"
+          autoFocus
+          placeholder="Loop name"
+          value={audioName}
+          onChange={(e) => setAudioName(e.target.value)}
+          className="text-base-dark bg-base-light rounded-md p-3
+               border-3 border-transparent 
+               focus:outline-none focus:border-primary-100"
+        />
+      </CustomModal>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import AudioList from "./AudioList";
 import SearchBar from "./SearchBar";
 import { SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
-import Modal from "react-modal";
 import { IoWarning } from "react-icons/io5";
+import CustomModal from "../CustomModal";
 
 const AudiosSearchPage = () => {
   const [allAudios, setAllAudios] = useState(null); // Full database
@@ -137,43 +137,39 @@ const AudiosSearchPage = () => {
         </div>
       </div>
 
-      <Modal
+      <CustomModal
         isOpen={deleteModal.isOpen}
         onRequestClose={closeModal}
-        className="flex flex-col gap-8 bg-surface-200 max-w-[400px] w-[80%] text-lg text-base-light px-6 py-4 rounded-md"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[50]"
-        contentLabel="Delete Audio Modal"
+        title={deleteModal.isSingle ? "Delete loop" : "Delete all loops"}
+        footer={
+          <>
+            <button
+              onClick={closeModal}
+              className="regular-button bg-primary-100 text-base-dark"
+            >
+              Cancel
+            </button>
+
+            <button
+              className="regular-button bg-surface-100 opacity-90"
+              onClick={() =>
+                deleteModal.isSingle
+                  ? onDeleteSingle(deleteModal.audioId)
+                  : onDeleteAll()
+              }
+            >
+              {deleteModal.isSingle ? "Delete" : "Delete All"}
+            </button>
+          </>
+        }
       >
-        <p className="font-bold tracking-wide text-2xl mb-3">
-          {deleteModal.isSingle ? "Delete loop" : "Delete all loops"}
-        </p>
         <div className="flex gap-3 items-center justify-center">
           <IoWarning size="2rem" color={getCssVar("--error-color")} />
           <p className="text-lg text-error font-semibold">
             This action is irreversible
           </p>
         </div>
-        <div className="flex flex-row gap-6 justify-end">
-          <button
-            onClick={closeModal}
-            className="regular-button bg-primary-100 text-base-dark"
-          >
-            Cancel
-          </button>
-          <button
-            className="regular-button bg-surface-100 opacity-90"
-            onClick={() => {
-              if (deleteModal.isSingle) {
-                onDeleteSingle(deleteModal.audioId);
-              } else {
-                onDeleteAll();
-              }
-            }}
-          >
-            {deleteModal.isSingle ? "Delete" : "Delete All"}
-          </button>
-        </div>
-      </Modal>
+      </CustomModal>
     </div>
   );
 };
