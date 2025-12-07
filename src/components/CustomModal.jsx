@@ -1,4 +1,5 @@
 import Modal from "react-modal";
+import { IoCloseOutline } from "react-icons/io5";
 
 Modal.setAppElement("#root");
 
@@ -20,7 +21,12 @@ export default function CustomModal({
       contentLabel={title}
     >
       {/* Title */}
-      {title && <p className="font-semibold text-2xl mb-2">{title}</p>}
+      {title && (
+        <div className="flex justify-between">
+          <p className="font-semibold text-2xl mb-2">{title}</p>
+          <IoCloseOutline onClick={onRequestClose} className="text-3xl" />
+        </div>
+      )}
 
       {/* Body content */}
       <div>{children}</div>
