@@ -13,7 +13,12 @@ import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
 import { saveLoops } from "../../api/indexedDB.js";
 import CustomModal from "../CustomModal.jsx";
 
-export default function EditAudioPage({ audioEl, audioRef, video }) {
+export default function EditAudioPage({
+  audioEl,
+  audioRef,
+  video,
+  existingRegions,
+}) {
   const [wavesurfer, setWavesurfer] = useState(null);
   const [currTime, setCurrTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -22,6 +27,7 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
   const [minPxPerSec, setMinPxPerSec] = useState(100);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [audioName, setAudioName] = useState(""); // database names
+  const [loadedRegions, setLoadedRegions] = useState(existingRegions || []);
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
   const timelineRef = useRef(null);
@@ -250,6 +256,13 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
     });
   }
 
+  function loadExistingRegionFromDB(region) {
+    regions.clearRegions();
+    regions.addRegion({
+      ...region,
+    });
+  }
+
   function handleLoopModeChange(e) {
     const newMode = !loopMode;
     setLoopMode(newMode);
@@ -322,9 +335,7 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
     <div className="flex flex-col h-full w-full">
       {!isWaveReady && (
         <div className="h-full flex flex-col justify-center items-center gap-4">
-          <p className="font-semibold text-[1.3rem] text-center">
-            Loading waveform
-          </p>
+          <p className="font-semibold text-[1.3rem] text-center">Loading waveform</p>
           <SyncLoader color={getCssVar("--text-color")} margin={5} size={15} />
         </div>
       )}
@@ -387,10 +398,7 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
             <button className="regular-button" onClick={markEnd}>
               End
             </button>
-            <button
-              className="regular-button"
-              onClick={() => setIsModalOpen(true)}
-            >
+            <button className="regular-button" onClick={() => setIsModalOpen(true)}>
               Save
             </button>
           </div>
@@ -412,7 +420,12 @@ export default function EditAudioPage({ audioEl, audioRef, video }) {
               />
             )}
           </div>
-          <Controls audioRef={audioRef} wavesurfer={wavesurfer} />
+          <Controls
+            audioRef={audioRef}
+            wavesurfer={wavesurfer}
+            videoId={video.id.videoId}
+            displayRegion={loadExistingRegionFromDB}
+          />
         </>
       )}
       <CustomModal

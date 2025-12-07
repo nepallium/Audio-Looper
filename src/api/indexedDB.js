@@ -97,6 +97,19 @@ export async function getAudios() {
   return result;
 }
 
+export async function getLoopRegions(key) {
+  const db = await openDB();
+  const tx = db.transaction("audios", "readonly");
+  const store = tx.objectStore("audios");
+  const result = await new Promise((resolve, reject) => {
+    const request = store.get(key);
+    request.onsuccess = (e) => resolve(request.result);
+    request.onerror = (e) => reject(request.error);
+  });
+  tx.done;
+  return result.regions ? result.regions : [];
+}
+
 export function getStorageUsage() {
   // Check storage quota and usage
   if (navigator.storage && navigator.storage.estimate) {
@@ -128,9 +141,7 @@ export async function getAudiosByName(searchTerm) {
   }
 
   const lowerSearch = searchTerm.toLowerCase().trim();
-  return allAudios.filter((audio) =>
-    audio.name.toLowerCase().includes(lowerSearch)
-  );
+  return allAudios.filter((audio) => audio.name.toLowerCase().includes(lowerSearch));
 }
 
 export async function deleteAudio(key) {

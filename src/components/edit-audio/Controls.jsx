@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
-import Modal from "react-modal";
+import CustomModal from "../CustomModal";
+import LoopsList from "./saved-loops/LoopsList";
 
-export default function Controls({ audioRef, wavesurfer }) {
+export default function Controls({ audioRef, wavesurfer, videoId, displayRegion }) {
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 
@@ -102,10 +103,7 @@ export default function Controls({ audioRef, wavesurfer }) {
     await audioCtx.audioWorklet.addModule(
       new URL(`../../api/SoundTouchWorklet.js`, import.meta.url)
     );
-    soundtouchRef.current = new AudioWorkletNode(
-      audioCtx,
-      "soundtouch-processor"
-    );
+    soundtouchRef.current = new AudioWorkletNode(audioCtx, "soundtouch-processor");
 
     const soundtouch = soundtouchRef.current;
 
@@ -236,19 +234,13 @@ export default function Controls({ audioRef, wavesurfer }) {
         </div>
       </form>
 
-      <Modal
-        isOpen={isModalOpen}
+      <CustomModal
+        isOpen={!isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
-        className="flex flex-col gap-8 bg-surface-200 max-w-[400px] w-[80%] text-lg text-base-light px-6 py-4 rounded-md"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[50]"
-        contentLabel="Save Loops Modal"
+        title="Saved loops"
       >
-        <p className="font-semibold text-2xl mb-4">Save audio loops</p>
-
-        <div className="flex flex-row gap-6 justify-end">
-          <button onClick={() => setIsModalOpen(false)}>Cancel</button>
-        </div>
-      </Modal>
+        <LoopsList videoId={videoId} displayRegion={displayRegion} />
+      </CustomModal>
     </>
   );
 }
