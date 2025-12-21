@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import EditAudioPage from "./EditAudioPage";
 import { loadAudioFromDB } from "../../api/indexedDB";
+import { useWaveContext, useWaveDispatch, WaveProvider } from "./WaveContext";
 
 export default function App() {
   const audioRef = useRef(null);
-  const [audioEl, setAudioEl] = useState(null);
+
   const location = useLocation();
   const { videoId, video, regions = null } = location.state;
+
+  const dispatch = useWaveDispatch();
+  const wave = useWaveContext();
 
   useEffect(() => {
     async function generateBlobUrl() {
@@ -28,10 +32,12 @@ export default function App() {
         audioRef.current.load();
       });
 
-      setAudioEl(audioRef.current);
+      dispatch({ type: "set_audioEl", audioEl: audioRef.current });
     }
 
     generateBlobUrl();
+    dispatch({ type: "set_video", video: video });
+    dispatch({ type: "set_existingRegions", regions: existingRegions });
   }, []);
 
   return (
@@ -43,12 +49,9 @@ export default function App() {
         preload="metadata"
       ></audio>
       {audioEl && (
-        <EditAudioPage
-          audioEl={audioEl}
-          audioRef={audioRef}
-          video={video}
-          existingRegions={regions}
-        />
+        <WaveProvider>
+          <EditAudioPage />
+        </WaveProvider>
       )}
     </div>
   );

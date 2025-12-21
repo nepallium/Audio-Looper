@@ -335,7 +335,9 @@ export default function EditAudioPage({
     <div className="flex flex-col h-full w-full">
       {!isWaveReady && (
         <div className="h-full flex flex-col justify-center items-center gap-4">
-          <p className="font-semibold text-[1.3rem] text-center">Loading waveform</p>
+          <p className="font-semibold text-[1.3rem] text-center">
+            Loading waveform
+          </p>
           <SyncLoader color={getCssVar("--text-color")} margin={5} size={15} />
         </div>
       )}
@@ -398,7 +400,10 @@ export default function EditAudioPage({
             <button className="regular-button" onClick={markEnd}>
               End
             </button>
-            <button className="regular-button" onClick={() => setIsModalOpen(true)}>
+            <button
+              className="regular-button"
+              onClick={() => setIsModalOpen(true)}
+            >
               Save
             </button>
           </div>
@@ -421,7 +426,7 @@ export default function EditAudioPage({
             )}
           </div>
           <Controls
-            audioRef={audioRef}
+            // audioRef={audioRef}
             wavesurfer={wavesurfer}
             videoId={video.id.videoId}
             displayRegion={loadExistingRegionFromDB}
