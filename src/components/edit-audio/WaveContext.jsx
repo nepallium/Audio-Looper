@@ -51,5 +51,12 @@ function waveReducer(wave, action) {
         audioRef: action.audioRef,
       };
     }
+
+    case "set_displayRegionFct": {
+      return {
+        ...wave,
+        displayRegion: action.displayRegion,
+      };
+    }
   }
 }

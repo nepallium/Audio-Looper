@@ -5,7 +5,9 @@ export default function LoopCard({ name, start, end }) {
     <div className="flex justify-between">
       {name}
       <div>
-        <p className="font-mono">{`${formatTime(start)} — ${formatTime(end)}`}</p>
+        <p className="font-mono">{`${formatTime(start)} — ${formatTime(
+          end
+        )}`}</p>
       </div>
     </div>
   );

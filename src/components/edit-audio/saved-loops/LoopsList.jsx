@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { getLoopRegions } from "../../../api/indexedDB";
 import LoopCard from "./LoopCard";
+import { useWaveContext } from "../WaveContext";
 
-export default function LoopsList({ videoId, displayRegion }) {
+export default function LoopsList() {
+  const wave = useWaveContext();
+  const videoId = wave.video.id.videoId;
+  const displayRegion = wave.displayRegion;
+
   const [regions, setRegions] = useState([]);
 
   useEffect(() => {
@@ -18,7 +23,7 @@ export default function LoopsList({ videoId, displayRegion }) {
         return (
           <LoopCard
             onClick={() => {
-              displayRegion(region);
+              displayRegion();
               //todo close modal
             }}
             key={region.id}

@@ -4,7 +4,7 @@ import CustomModal from "../CustomModal";
 import LoopsList from "./saved-loops/LoopsList";
 import { useWaveContext } from "./WaveContext";
 
-export default function Controls({ wavesurfer, videoId, displayRegion }) {
+export default function Controls({ wavesurfer }) {
   const waveContext = useWaveContext();
   const audioRef = waveContext.audioRef;
 
@@ -246,7 +246,7 @@ export default function Controls({ wavesurfer, videoId, displayRegion }) {
         onRequestClose={() => setIsModalOpen(false)}
         title="Saved loops"
       >
-        <LoopsList videoId={videoId} displayRegion={displayRegion} />
+        <LoopsList />
       </CustomModal>
     </>
   );

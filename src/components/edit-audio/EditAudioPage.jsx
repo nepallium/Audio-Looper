@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
@@ -12,9 +12,10 @@ import isMobileDevice from "../../utils/isMobileDevice.js";
 import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
 import { saveLoops } from "../../api/indexedDB.js";
 import CustomModal from "../CustomModal.jsx";
-import { useWaveContext } from "./WaveContext.jsx";
+import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
 
 export default function EditAudioPage() {
+  const dispatch = useWaveDispatch();
   const waveContext = useWaveContext();
   const audioEl = waveContext.audioRef.current;
   const video = waveContext.video;
@@ -257,12 +258,16 @@ export default function EditAudioPage() {
     });
   }
 
-  function loadExistingRegionFromDB(region) {
+  const displayRegion = useCallback((region) => {
     regions.clearRegions();
     regions.addRegion({
       ...region,
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    dispatch({ type: "set_displayRegionFct", displayRegion: displayRegion });
+  }, [displayRegion]);
 
   function handleLoopModeChange(e) {
     const newMode = !loopMode;
@@ -426,11 +431,7 @@ export default function EditAudioPage() {
               />
             )}
           </div>
-          <Controls
-            wavesurfer={wavesurfer}
-            videoId={video.id.videoId}
-            displayRegion={loadExistingRegionFromDB}
-          />
+          <Controls wavesurfer={wavesurfer} />
         </>
       )}
       <CustomModal
