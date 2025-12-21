@@ -12,13 +12,14 @@ import isMobileDevice from "../../utils/isMobileDevice.js";
 import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
 import { saveLoops } from "../../api/indexedDB.js";
 import CustomModal from "../CustomModal.jsx";
+import { useWaveContext } from "./WaveContext.jsx";
 
-export default function EditAudioPage({
-  audioEl,
-  audioRef,
-  video,
-  existingRegions,
-}) {
+export default function EditAudioPage() {
+  const waveContext = useWaveContext();
+  const audioEl = waveContext.audioEl;
+  const video = waveContext.video;
+  const existingRegions = waveContext.existingRegions;
+
   const [wavesurfer, setWavesurfer] = useState(null);
   const [currTime, setCurrTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);

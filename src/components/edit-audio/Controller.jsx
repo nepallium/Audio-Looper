@@ -4,14 +4,22 @@ import EditAudioPage from "./EditAudioPage";
 import { loadAudioFromDB } from "../../api/indexedDB";
 import { useWaveContext, useWaveDispatch, WaveProvider } from "./WaveContext";
 
-export default function App() {
+export default function Controller() {
+  return (
+    <WaveProvider>
+      <ControllerInner />
+    </WaveProvider>
+  );
+}
+
+function ControllerInner() {
   const audioRef = useRef(null);
 
   const location = useLocation();
   const { videoId, video, regions = null } = location.state;
 
   const dispatch = useWaveDispatch();
-  const wave = useWaveContext();
+  const waveContext = useWaveContext();
 
   useEffect(() => {
     async function generateBlobUrl() {
@@ -37,7 +45,7 @@ export default function App() {
 
     generateBlobUrl();
     dispatch({ type: "set_video", video: video });
-    dispatch({ type: "set_existingRegions", regions: existingRegions });
+    dispatch({ type: "set_existingRegions", regions: regions });
   }, []);
 
   return (
@@ -48,11 +56,7 @@ export default function App() {
         // src={url}
         preload="metadata"
       ></audio>
-      {audioEl && (
-        <WaveProvider>
-          <EditAudioPage />
-        </WaveProvider>
-      )}
+      {waveContext.audioEl && <EditAudioPage />}
     </div>
   );
 }

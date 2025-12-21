@@ -5,7 +5,7 @@ const WaveContext = createContext(null);
 const WaveDispatchContext = createContext(null);
 
 export function WaveProvider({ children }) {
-  const [waveContext, dispatch] = useReducer(waveReducer);
+  const [waveContext, dispatch] = useReducer(waveReducer, {});
 
   return (
     <WaveContext value={waveContext}>
@@ -28,6 +28,20 @@ function waveReducer(wave, action) {
       return {
         ...wave,
         audioEl: action.audioEl,
+      };
+    }
+
+    case "set_video": {
+      return {
+        ...wave,
+        video: action.video,
+      };
+    }
+
+    case "set_existingRegions": {
+      return {
+        ...wave,
+        existingRegions: action.regions,
       };
     }
   }
