@@ -8,10 +8,6 @@ export default function App() {
   const [audioEl, setAudioEl] = useState(null);
   const location = useLocation();
   const { videoId, video, regions = null } = location.state;
-  // const url = "../../dev-tmp/audios/test_audio4.opus";
-  // const url = "../../dev-tmp/audios/test_audio2.mp3";
-  // const url = "https://www.youtube.com/watch?v=7GRG7HNDct8"
-  // const url = "http://localhost:8000/api/audios/7GRG7HNDct8";
 
   useEffect(() => {
     async function generateBlobUrl() {
