@@ -3,7 +3,12 @@ import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
 import CustomModal from "../CustomModal";
 import LoopsList from "./saved-loops/LoopsList";
 
-export default function Controls({ audioRef, wavesurfer, videoId, displayRegion }) {
+export default function Controls({
+  audioRef,
+  wavesurfer,
+  videoId,
+  displayRegion,
+}) {
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 
@@ -103,7 +108,10 @@ export default function Controls({ audioRef, wavesurfer, videoId, displayRegion 
     await audioCtx.audioWorklet.addModule(
       new URL(`../../api/SoundTouchWorklet.js`, import.meta.url)
     );
-    soundtouchRef.current = new AudioWorkletNode(audioCtx, "soundtouch-processor");
+    soundtouchRef.current = new AudioWorkletNode(
+      audioCtx,
+      "soundtouch-processor"
+    );
 
     const soundtouch = soundtouchRef.current;
 
@@ -235,7 +243,7 @@ export default function Controls({ audioRef, wavesurfer, videoId, displayRegion 
       </form>
 
       <CustomModal
-        isOpen={!isModalOpen}
+        isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         title="Saved loops"
       >

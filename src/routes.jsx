@@ -1,6 +1,5 @@
-import App from "./components/App";
 import YtSearchPage from "./components/yt-search/YtSearchPage";
-import EditAudioPage from "./components/edit-audio/EditAudioPage";
+import Controller from "./components/edit-audio/Controller";
 import AudiosSearchPage from "./components/audio-search/AudiosSearchPage";
 
 const routes = [
@@ -14,7 +13,7 @@ const routes = [
   },
   {
     path: "/audio-editor",
-    element: <App />,
+    element: <Controller />,
   },
 ];
 
