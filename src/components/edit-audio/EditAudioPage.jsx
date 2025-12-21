@@ -16,7 +16,7 @@ import { useWaveContext } from "./WaveContext.jsx";
 
 export default function EditAudioPage() {
   const waveContext = useWaveContext();
-  const audioEl = waveContext.audioEl;
+  const audioEl = waveContext.audioRef.current;
   const video = waveContext.video;
   const existingRegions = waveContext.existingRegions;
 
@@ -427,7 +427,6 @@ export default function EditAudioPage() {
             )}
           </div>
           <Controls
-            // audioRef={audioRef}
             wavesurfer={wavesurfer}
             videoId={video.id.videoId}
             displayRegion={loadExistingRegionFromDB}

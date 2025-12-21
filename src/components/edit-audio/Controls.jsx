@@ -2,13 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
 import CustomModal from "../CustomModal";
 import LoopsList from "./saved-loops/LoopsList";
+import { useWaveContext } from "./WaveContext";
 
-export default function Controls({
-  audioRef,
-  wavesurfer,
-  videoId,
-  displayRegion,
-}) {
+export default function Controls({ wavesurfer, videoId, displayRegion }) {
+  const waveContext = useWaveContext();
+  const audioRef = waveContext.audioRef;
+
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 

@@ -44,5 +44,12 @@ function waveReducer(wave, action) {
         existingRegions: action.regions,
       };
     }
+
+    case "set_audioRef": {
+      return {
+        ...wave,
+        audioRef: action.audioRef,
+      };
+    }
   }
 }

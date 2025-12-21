@@ -14,6 +14,7 @@ export default function Controller() {
 
 function ControllerInner() {
   const audioRef = useRef(null);
+  const [audioEl, setAudioEl] = useState(null);
 
   const location = useLocation();
   const { videoId, video, regions = null } = location.state;
@@ -40,7 +41,7 @@ function ControllerInner() {
         audioRef.current.load();
       });
 
-      dispatch({ type: "set_audioEl", audioEl: audioRef.current });
+      setAudioEl(audioRef.current);
     }
 
     generateBlobUrl();
@@ -48,15 +49,14 @@ function ControllerInner() {
     dispatch({ type: "set_existingRegions", regions: regions });
   }, []);
 
+  useEffect(() => {
+    dispatch({ type: "set_audioRef", audioRef: audioRef });
+  }, [audioRef]);
+
   return (
     <div id="edit-audio-page" className="page-layout h-screen text-base-light">
-      <audio
-        ref={audioRef}
-        // src={blobUrl}
-        // src={url}
-        preload="metadata"
-      ></audio>
-      {waveContext.audioEl && <EditAudioPage />}
+      <audio ref={audioRef} preload="metadata"></audio>
+      {audioEl && <EditAudioPage />}
     </div>
   );
 }
