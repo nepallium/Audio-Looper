@@ -28,8 +28,9 @@ const AudiosSearchPage = () => {
           setAllAudios([]);
           setFilteredAudios([]);
         } else {
-          setAllAudios(res);
-          setFilteredAudios(res);
+          const audiosExcludeTmp = res.filter((audio) => !audio.isTmp);
+          setAllAudios(audiosExcludeTmp);
+          setFilteredAudios(audiosExcludeTmp);
         }
       } catch (err) {
         console.error("Could not load existing audios:", err);

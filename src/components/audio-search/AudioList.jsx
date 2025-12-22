@@ -1,6 +1,7 @@
 import AudioItem from "./AudioItem";
 
 export default function AudioList({ audios, openModal }) {
+  console.log(audios);
   const audioItems = audios
     .filter((audio) => {
       return audio.name !== undefined;

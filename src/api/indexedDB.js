@@ -74,7 +74,7 @@ export async function saveLoops(key, region) {
 
   // console.log(existing);
   if (existing && existing.isTmp) {
-    delete existing.isTmp;
+    existing.isTmp = false;
   }
   if (region) {
     const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
@@ -84,11 +84,7 @@ export async function saveLoops(key, region) {
       isSaveSuccess = false;
     }
   }
-  // const updated = {
-  //   ...existing,
-  // };
-  // // console.log(updated);
-  // await store.put(updated);
+  await store.put(existing);
   await tx.done;
   return isSaveSuccess;
 }
@@ -154,12 +150,12 @@ export async function getAudiosByName(searchTerm) {
   });
 
   if (!searchTerm || searchTerm.trim() === "") {
-    return allAudios; // Return all if no search term
+    return allAudios.filter((audio) => !audio.isTmp); // Return all if no search term
   }
 
   const lowerSearch = searchTerm.toLowerCase().trim();
-  return allAudios.filter((audio) =>
-    audio.name.toLowerCase().includes(lowerSearch)
+  return allAudios.filter(
+    (audio) => audio.name.toLowerCase().includes(lowerSearch) && !audio.isTmp
   );
 }
 
