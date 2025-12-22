@@ -30,7 +30,6 @@ export default function EditAudioPage() {
   const [isWaveReady, setIsWaveReady] = useState(false);
   const [minPxPerSec, setMinPxPerSec] = useState(100);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [audioName, setAudioName] = useState(""); // database names
   const [loopName, setLoopName] = useState("");
   const [loadedRegions, setLoadedRegions] = useState(existingRegions || []);
   const [infoBanner, setInfoBanner] = useState({
@@ -344,12 +343,7 @@ export default function EditAudioPage() {
       };
     }
 
-    const ok = await saveLoops(
-      video.id.videoId,
-      audioName,
-      video,
-      serializedRegion
-    );
+    const ok = await saveLoops(video.id.videoId, serializedRegion);
     if (ok) {
       setInfoBanner((b) => ({
         message: "Saved successfully",

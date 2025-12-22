@@ -18,10 +18,17 @@ export function openDB() {
   });
 }
 
-export async function saveTmpAudioToDB(key, blob) {
+export async function saveTmpAudioToDB(video, blob) {
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
-  tx.objectStore("audios").put({ id: key, blobObj: blob });
+  tx.objectStore("audios").put({
+    isTmp: true,
+    id: video.id.videoId,
+    name: video.snippet.title,
+    video: video,
+    blobObj: blob,
+    regions: [],
+  });
   await tx.done;
   return true;
 }
@@ -53,7 +60,7 @@ export async function isAudioIdExists(key) {
   return result;
 }
 
-export async function saveLoops(key, audioName, video, region) {
+export async function saveLoops(key, region) {
   let isSaveSuccess = true;
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
@@ -66,25 +73,22 @@ export async function saveLoops(key, audioName, video, region) {
   });
 
   // console.log(existing);
+  if (existing && existing.isTmp) {
+    delete existing.isTmp;
+  }
   if (region) {
-    if (existing.regions) {
-      const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
-      if (isRegionUnique) {
-        existing.regions.push(region);
-      } else {
-        isSaveSuccess = false;
-      }
+    const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
+    if (isRegionUnique) {
+      existing.regions.push(region);
     } else {
-      existing.regions = [region];
+      isSaveSuccess = false;
     }
   }
-  const updated = {
-    ...existing,
-    name: audioName,
-    video: video,
-  };
-  // console.log(updated);
-  await store.put(updated);
+  // const updated = {
+  //   ...existing,
+  // };
+  // // console.log(updated);
+  // await store.put(updated);
   await tx.done;
   return isSaveSuccess;
 }

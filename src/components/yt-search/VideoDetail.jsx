@@ -46,7 +46,7 @@ const VideoDetail = ({ video }) => {
         // console.log("Blob size:", blob.size);
         // const blobUrl = URL.createObjectURL(blob);
 
-        await saveTmpAudioToDB(videoId, blob);
+        await saveTmpAudioToDB(video, blob);
         console.log("Saved to IndexedDB");
       }
 
