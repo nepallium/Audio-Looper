@@ -13,6 +13,7 @@ import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
 import { saveLoops } from "../../api/indexedDB.js";
 import CustomModal from "../CustomModal.jsx";
 import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
+import InfoBanner from "../InfoBanner.jsx";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -30,6 +31,8 @@ export default function EditAudioPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [audioName, setAudioName] = useState(""); // database names
   const [loadedRegions, setLoadedRegions] = useState(existingRegions || []);
+  const [infoBanner, setInfoBanner] = useState({ message: "", error: false });
+
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
   const timelineRef = useRef(null);
@@ -330,11 +333,11 @@ export default function EditAudioPage() {
       serializedRegions
     );
     if (ok) {
-      console.log("saved");
-      // TODO slide modal from top saying saved!
-
-      setIsModalOpen(false);
+      setInfoBanner({ message: "Saved successfully", error: false });
+    } else {
+      setInfoBanner({ message: "An error occured", error: true });
     }
+    setIsModalOpen(false);
   }
 
   return (
@@ -457,6 +460,8 @@ export default function EditAudioPage() {
                focus:outline-none focus:border-primary-100"
         />
       </CustomModal>
+
+      <InfoBanner message={infoBanner.message} error={infoBanner.error} />
     </div>
   );
 }
