@@ -246,7 +246,7 @@ export default function Controls({ wavesurfer }) {
         onRequestClose={() => setIsModalOpen(false)}
         title="Saved loops"
       >
-        <LoopsList />
+        <LoopsList setIsModalOpen={setIsModalOpen} />
       </CustomModal>
     </>
   );

@@ -24,24 +24,10 @@ export function useWaveDispatch() {
 
 function waveReducer(wave, action) {
   switch (action.type) {
-    case "set_audioEl": {
-      return {
-        ...wave,
-        audioEl: action.audioEl,
-      };
-    }
-
     case "set_video": {
       return {
         ...wave,
         video: action.video,
-      };
-    }
-
-    case "set_existingRegions": {
-      return {
-        ...wave,
-        existingRegions: action.regions,
       };
     }
 
@@ -57,6 +43,10 @@ function waveReducer(wave, action) {
         ...wave,
         displayRegion: action.displayRegion,
       };
+    }
+
+    default: {
+      throw Error("unknown action in WaveContext: " + action.type);
     }
   }
 }

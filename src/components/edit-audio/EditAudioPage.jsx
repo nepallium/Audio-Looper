@@ -14,6 +14,7 @@ import { saveLoops } from "../../api/indexedDB.js";
 import CustomModal from "../CustomModal.jsx";
 import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
 import InfoBanner from "../InfoBanner.jsx";
+import { getLoopRegions } from "../../api/indexedDB.js";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -30,8 +31,13 @@ export default function EditAudioPage() {
   const [minPxPerSec, setMinPxPerSec] = useState(100);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [audioName, setAudioName] = useState(""); // database names
+  const [loopName, setLoopName] = useState("");
   const [loadedRegions, setLoadedRegions] = useState(existingRegions || []);
-  const [infoBanner, setInfoBanner] = useState({ message: "", error: false });
+  const [infoBanner, setInfoBanner] = useState({
+    message: "",
+    error: false,
+    trigger: 0,
+  });
 
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
@@ -40,26 +46,29 @@ export default function EditAudioPage() {
   const activeRegion = useRef(null);
   const loopModeRef = useRef(loopMode);
   const onReadyCalledRef = useRef(false);
-  const audioNameInputRef = useRef(null);
+  const loopNameInputRef = useRef(null);
 
   // auto select input txt audio on modal open
   useEffect(() => {
     if (isModalOpen) {
-      // reset value first
-      setAudioName(decodeHtmlEntities(video.snippet.title));
+      (async () => {
+        const loops = await getLoopRegions(video.id.videoId);
+        const nameIdx = loops.length + 1;
+        setLoopName(`Loop ${nameIdx}`);
 
-      // Delay selection until after the input updates
-      setTimeout(() => {
-        if (audioNameInputRef.current) {
-          audioNameInputRef.current.focus();
-          audioNameInputRef.current.setSelectionRange(
-            0,
-            audioNameInputRef.current.value.length
-          );
-        }
-      }, 0);
+        // Delay selection until after the input updates
+        setTimeout(() => {
+          if (loopNameInputRef.current) {
+            loopNameInputRef.current.focus();
+            loopNameInputRef.current.setSelectionRange(
+              0,
+              loopNameInputRef.current.value.length
+            );
+          }
+        }, 0);
+      })();
     }
-  }, [isModalOpen, video.snippet.title]);
+  }, [isModalOpen]);
 
   const timeline = useMemo(
     () =>
@@ -213,6 +222,7 @@ export default function EditAudioPage() {
       if (curr >= newEnd) newEnd = wavesurfer.getDuration();
 
       r.setOptions({
+        id: `region_${Date.now()}`,
         start: curr,
         end: newEnd,
         color: "rgba(255, 0, 0, 0.1)",
@@ -240,6 +250,7 @@ export default function EditAudioPage() {
       if (curr <= newStart) newStart = 0;
 
       r.setOptions({
+        id: `region_${Date.now()}`,
         start: newStart,
         end: curr,
         color: "rgba(255, 0, 0, 0.1)",
@@ -255,6 +266,7 @@ export default function EditAudioPage() {
 
   function createRegion(start, end) {
     regions.addRegion({
+      id: `region_${Date.now()}`,
       start: start,
       end: end,
       color: "rgba(255, 0, 0, 0.1)",
@@ -266,6 +278,7 @@ export default function EditAudioPage() {
     regions.addRegion({
       ...region,
     });
+    wavesurfer.setTime(region.start);
   }, []);
 
   useEffect(() => {
@@ -315,29 +328,41 @@ export default function EditAudioPage() {
   };
 
   async function onSave() {
-    const serializedRegions = regions.getRegions().map((r) => ({
-      id: r.id,
-      start: r.start,
-      end: r.end,
-      color: r.color,
-      drag: r.drag,
-      resize: r.resize,
-      resizeStart: r.resizeStart,
-      resizeEnd: r.resizeEnd,
-    }));
+    let serializedRegion = null;
+    if (regions.getRegions().length > 0) {
+      const r = regions.getRegions().at(0);
+      serializedRegion = {
+        id: r.id,
+        name: loopName,
+        start: r.start,
+        end: r.end,
+        color: r.color,
+        drag: r.drag,
+        resize: r.resize,
+        resizeStart: r.resizeStart,
+        resizeEnd: r.resizeEnd,
+      };
+    }
 
     const ok = await saveLoops(
       video.id.videoId,
       audioName,
       video,
-      serializedRegions
+      serializedRegion
     );
     if (ok) {
-      setInfoBanner({ message: "Saved successfully", error: false });
+      setInfoBanner((b) => ({
+        message: "Saved successfully",
+        error: false,
+        trigger: b.trigger + 1,
+      }));
     } else {
-      setInfoBanner({ message: "An error occured", error: true });
+      setInfoBanner((b) => ({
+        message: "Already saved",
+        error: false,
+        trigger: b.trigger + 1,
+      }));
     }
-    setIsModalOpen(false);
   }
 
   return (
@@ -409,10 +434,7 @@ export default function EditAudioPage() {
             <button className="regular-button" onClick={markEnd}>
               End
             </button>
-            <button
-              className="regular-button"
-              onClick={() => setIsModalOpen(true)}
-            >
+            <button className="regular-button" onClick={onSave}>
               Save
             </button>
           </div>
@@ -440,7 +462,7 @@ export default function EditAudioPage() {
       <CustomModal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
-        title="Save audio loops"
+        title="Save current loop"
         footer={
           <>
             <button onClick={() => setIsModalOpen(false)}>Cancel</button>
@@ -452,16 +474,21 @@ export default function EditAudioPage() {
           id="name"
           name="name"
           autoFocus
+          ref={loopNameInputRef}
           placeholder="Loop name"
-          value={audioName}
-          onChange={(e) => setAudioName(e.target.value)}
+          value={loopName}
+          onChange={(e) => setLoopName(e.target.value)}
           className="text-base-dark bg-base-light rounded-md p-3
                border-3 border-transparent 
                focus:outline-none focus:border-primary-100"
         />
       </CustomModal>
 
-      <InfoBanner message={infoBanner.message} error={infoBanner.error} />
+      <InfoBanner
+        message={infoBanner.message}
+        error={infoBanner.error}
+        trigger={infoBanner.trigger}
+      />
     </div>
   );
 }

@@ -53,7 +53,8 @@ export async function isAudioIdExists(key) {
   return result;
 }
 
-export async function saveLoops(key, audioName, video, regions) {
+export async function saveLoops(key, audioName, video, region) {
+  let isSaveSuccess = true;
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
@@ -65,16 +66,27 @@ export async function saveLoops(key, audioName, video, regions) {
   });
 
   // console.log(existing);
+  if (region) {
+    if (existing.regions) {
+      const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
+      if (isRegionUnique) {
+        existing.regions.push(region);
+      } else {
+        isSaveSuccess = false;
+      }
+    } else {
+      existing.regions = [region];
+    }
+  }
   const updated = {
     ...existing,
     name: audioName,
     video: video,
-    regions: regions,
   };
   // console.log(updated);
   await store.put(updated);
   await tx.done;
-  return true;
+  return isSaveSuccess;
 }
 
 export async function getAudios() {
@@ -107,6 +119,7 @@ export async function getLoopRegions(key) {
     request.onerror = (e) => reject(request.error);
   });
   tx.done;
+  // console.log(result);
   return result.regions ? result.regions : [];
 }
 
@@ -141,7 +154,9 @@ export async function getAudiosByName(searchTerm) {
   }
 
   const lowerSearch = searchTerm.toLowerCase().trim();
-  return allAudios.filter((audio) => audio.name.toLowerCase().includes(lowerSearch));
+  return allAudios.filter((audio) =>
+    audio.name.toLowerCase().includes(lowerSearch)
+  );
 }
 
 export async function deleteAudio(key) {

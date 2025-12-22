@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function InfoBanner({ message, duration = 2500, error = false }) {
+function InfoBanner({ message, duration = 2500, error = false, trigger }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -13,12 +13,12 @@ function InfoBanner({ message, duration = 2500, error = false }) {
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [message, duration]);
+  }, [trigger]);
 
   return (
     <div
       className={`
-        fixed top-0 inset-x-0 z-50 ml-auto mr-auto
+        fixed top-[-1] inset-x-0 z-50 ml-auto mr-auto
         bg-surface-200 text-center opacity-85
         px-10 py-3 w-max rounded-md
         transform transition-transform duration-300 ease-out

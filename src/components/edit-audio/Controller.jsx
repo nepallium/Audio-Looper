@@ -46,7 +46,6 @@ function ControllerInner() {
 
     generateBlobUrl();
     dispatch({ type: "set_video", video: video });
-    dispatch({ type: "set_existingRegions", regions: regions });
   }, []);
 
   useEffect(() => {

@@ -3,10 +3,9 @@ import { getLoopRegions } from "../../../api/indexedDB";
 import LoopCard from "./LoopCard";
 import { useWaveContext } from "../WaveContext";
 
-export default function LoopsList() {
+export default function LoopsList({ setIsModalOpen }) {
   const wave = useWaveContext();
   const videoId = wave.video.id.videoId;
-  const displayRegion = wave.displayRegion;
 
   const [regions, setRegions] = useState([]);
 
@@ -18,17 +17,14 @@ export default function LoopsList() {
         let name;
         if (!region.name) {
           name = `Loop ${nameIdx++}`;
+          region.name = name;
         }
 
         return (
           <LoopCard
-            onClick={() => {
-              displayRegion();
-              //todo close modal
-            }}
             key={region.id}
-            name={name}
-            {...region}
+            setIsModalOpen={setIsModalOpen}
+            region={region}
           />
         );
       });
