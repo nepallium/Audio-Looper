@@ -33,5 +33,5 @@ export default function LoopsList({ setIsModalOpen }) {
     loadRegions();
   }, []);
 
-  return <div>{regions}</div>;
+  return <div className="">{regions}</div>;
 }

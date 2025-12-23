@@ -148,7 +148,7 @@ export default function Controls({ wavesurfer }) {
 
   return (
     <>
-      <form>
+      <form className="flex-1 flex flex-col justify-between">
         <label>
           {`Tempo: ${tempoValue}`}
           <div className="flex items-center gap-2">
@@ -245,6 +245,7 @@ export default function Controls({ wavesurfer }) {
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         title="Saved loops"
+        className="h-[70%]"
       >
         <LoopsList setIsModalOpen={setIsModalOpen} />
       </CustomModal>
