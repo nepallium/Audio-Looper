@@ -17,7 +17,7 @@ module.exports = {
         surface: {
           100: "var(--bg-color)", // #242933
           200: "var(--sub-alt-color)", // #2e3440
-          300: "var(--sub-color)", // #929aaa
+          300: "rgb(var(--sub-color) / <alpha-value>)", // #929aaa
           400: "var(--text-color)", // #d8dee9
         },
         error: {

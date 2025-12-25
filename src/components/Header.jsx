@@ -1,3 +1,16 @@
+import { FiMenu } from "react-icons/fi";
+import { useNavigate } from "react-router";
+import BurgerMenu from "./BurgerMenu";
+
 export default function Header({ title }) {
-  return <h1 className="header">{title}</h1>;
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex relative">
+      <header className="header">
+        <p>{title}</p>
+        <BurgerMenu />
+      </header>
+    </div>
+  );
 }
