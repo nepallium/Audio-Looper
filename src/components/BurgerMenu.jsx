@@ -21,9 +21,9 @@ export default function BurgerMenu() {
       {/* menu */}
       <nav
         className={`
-            fixed top-0 left-0 h-screen w-[70%] z-40
+            fixed top-0 -left-3 h-screen w-[70%] z-40
             px-6 pt-20 font-normal
-            bg-surface-300/[0.96] backdrop-blur-sm
+            bg-surface-300
             duration-300 ease-out transform transition-transform
             ${isOpen ? "translate-x-0" : "-translate-x-full -left-3"}
             `}

@@ -16,6 +16,7 @@ import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
 import InfoBanner from "../InfoBanner.jsx";
 import { getLoopRegions } from "../../api/indexedDB.js";
 import Header from "../Header.jsx";
+import BurgerMenu from "../BurgerMenu.jsx";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -381,7 +382,13 @@ export default function EditAudioPage() {
           )}
         >
           <Header title={decodeHtmlEntities(video.snippet.title)} />
-          <div className="mt-4">
+          {/* <div className="h-max relative flex justify-center p">
+            <BurgerMenu />
+            <p className="font-semibold text-xl mb-4 text-center text-balance line-clamp-2 max-w-[75%]">
+              {decodeHtmlEntities(video.snippet.title)}
+            </p>
+          </div> */}
+          <div className="">
             <WavesurferPlayer
               height={320}
               waveColor={getCssVar("--sub-alt-color")}
