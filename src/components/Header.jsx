@@ -6,9 +6,10 @@ export default function Header({ title }) {
   const navigate = useNavigate();
 
   return (
-    <div className="flex relative">
-      <header className="header">
-        <p>{title}</p>
+    <div className="relative">
+      <header className="header flex justify-center">
+        <p className="line-clamp-2 max-w-[90%]">{title}</p>
+        <BurgerMenu />
       </header>
     </div>
   );

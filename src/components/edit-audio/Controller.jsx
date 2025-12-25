@@ -61,7 +61,7 @@ function ControllerInner() {
     dispatch({ type: "set_audioRef", audioRef });
   }, [dispatch]);
 
-  if (!isNoAudio) {
+  if (isNoAudio) {
     return (
       <main className="flex flex-col items-center justify-center page-layout h-screen text-base-light gap-12">
         <h1 className="font-semibold text-xl">
