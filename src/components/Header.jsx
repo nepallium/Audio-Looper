@@ -9,7 +9,6 @@ export default function Header({ title }) {
     <div className="flex relative">
       <header className="header">
         <p>{title}</p>
-        <BurgerMenu />
       </header>
     </div>
   );

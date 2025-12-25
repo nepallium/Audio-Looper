@@ -10,7 +10,7 @@ export default function BurgerMenu() {
 
   return (
     <div className="text-base-dark">
-      <div className="absolute top-[50%] translate-y-[-50%] left-0 text-base-light z-50">
+      <div className="absolute top-[16px] left-0 text-base-light z-50">
         <Hamburger
           size={24}
           toggled={isOpen}
@@ -23,7 +23,7 @@ export default function BurgerMenu() {
         className={`
             fixed top-0 left-0 h-screen w-[70%] z-40
             px-6 pt-20 font-normal
-            bg-surface-300/[0.96] backdrop-blur-sm
+            bg-surface-300/[0.93] backdrop-blur-sm
             duration-300 ease-out transform transition-transform
             ${isOpen ? "translate-x-0" : "-translate-x-full -left-3"}
             `}
@@ -36,7 +36,7 @@ export default function BurgerMenu() {
               navigate("/yt-search");
             }}
           >
-            <IoIosSearch />
+            <IoIosSearch size={28} />
             <p className="text-lg">Youtube Search</p>
           </li>
           <li
@@ -46,7 +46,7 @@ export default function BurgerMenu() {
               navigate("/");
             }}
           >
-            <CiBookmarkCheck />
+            <CiBookmarkCheck size={28} />
             <p className="text-lg">Saved Audios</p>
           </li>
         </ul>
