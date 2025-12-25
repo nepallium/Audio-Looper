@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
+import CustomModal from "../CustomModal";
+import LoopsList from "./saved-loops/LoopsList";
+import { useWaveContext } from "./WaveContext";
 
-export default function Controls({ audioRef }) {
+export default function Controls({ wavesurfer }) {
+  const waveContext = useWaveContext();
+  const audioRef = waveContext.audioRef;
+
   const audioCtxRef = useRef(null);
   const soundtouchRef = useRef(null);
 
@@ -11,6 +17,8 @@ export default function Controls({ audioRef }) {
 
   const [tempoValue, setTempoValue] = useState(1);
   const [keyValue, setKeyValue] = useState(0);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     audioRef.current.volume = 0.3;
@@ -44,8 +52,9 @@ export default function Controls({ audioRef }) {
 
   const onTempoChange = ({ target: { value } }) => {
     setTempoValue(value);
-    audioRef.current.preservesPitch = true;
-    audioRef.current.playbackRate = +value;
+    // audioRef.current.preservesPitch = true;
+    // audioRef.current.playbackRate = +value;
+    wavesurfer.setPlaybackRate(+value, true);
   };
 
   const onKeyChange = ({ target: { value } }) => {
@@ -138,80 +147,108 @@ export default function Controls({ audioRef }) {
   }
 
   return (
-    <form>
-      <label>
-        {`Tempo: ${tempoValue}`}
-        <div className="flex items-center gap-2">
-          <IoMdRemoveCircle
-            size={34}
-            onClick={() => onMinus(onTempoChange, tempoRef)}
-            className="cursor-pointer"
-          />
-          <input
-            ref={tempoRef}
-            id="tempo"
-            type="range"
-            min="0.25"
-            max="1.5"
-            step="0.01"
-            value={tempoValue}
-            onChange={onTempoChange}
-          />
-          <IoMdAddCircle
-            size={34}
-            onClick={() => onPlus(onTempoChange, tempoRef)}
-            className="cursor-pointer"
-          />
-        </div>
-      </label>
-      <label>
-        {`Key: ${keyValue}`}
-        <div className="flex items-center gap-2">
-          <IoMdRemoveCircle
-            size={34}
-            onClick={() => onMinus(onKeyChange, keyRef)}
-            className="cursor-pointer"
-          />
-          <div className="w-full">
-            <input
-              ref={keyRef}
-              type="range"
-              min="-7.0"
-              max="7.0"
-              id="key"
-              step="1"
-              list="keyrange"
-              value={keyValue}
-              onChange={onKeyChange}
+    <>
+      <form className="flex-1 flex flex-col justify-between">
+        <label>
+          {`Tempo: ${tempoValue}`}
+          <div className="flex items-center gap-2">
+            <IoMdRemoveCircle
+              size={34}
+              onClick={() => onMinus(onTempoChange, tempoRef)}
+              className="cursor-pointer"
             />
-            <datalist className="sliderticks">
-              <span>-7</span>
-              <span>-6</span>
-              <span>-5</span>
-              <span>-4</span>
-              <span>-3</span>
-              <span>-2</span>
-              <span>-1</span>
-              <span>0</span>
-              <span>1</span>
-              <span>2</span>
-              <span>3</span>
-              <span>4</span>
-              <span>5</span>
-              <span>6</span>
-              <span>7</span>
-            </datalist>
+            <input
+              ref={tempoRef}
+              id="tempo"
+              type="range"
+              min="0.25"
+              max="1.5"
+              step="0.01"
+              value={tempoValue}
+              onChange={onTempoChange}
+            />
+            <IoMdAddCircle
+              size={34}
+              onClick={() => onPlus(onTempoChange, tempoRef)}
+              className="cursor-pointer"
+            />
           </div>
-          <IoMdAddCircle
-            size={34}
-            onClick={() => onPlus(onKeyChange, keyRef)}
-            className="cursor-pointer"
-          />
+        </label>
+        <label>
+          {`Key: ${keyValue}`}
+          <div className="flex items-center gap-2">
+            <IoMdRemoveCircle
+              size={34}
+              onClick={() => onMinus(onKeyChange, keyRef)}
+              className="cursor-pointer"
+            />
+            <div className="w-full">
+              <input
+                ref={keyRef}
+                type="range"
+                min="-7.0"
+                max="7.0"
+                id="key"
+                step="1"
+                list="keyrange"
+                value={keyValue}
+                onChange={onKeyChange}
+              />
+              <datalist className="sliderticks">
+                <span>-7</span>
+                <span>-6</span>
+                <span>-5</span>
+                <span>-4</span>
+                <span>-3</span>
+                <span>-2</span>
+                <span>-1</span>
+                <span>0</span>
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
+                <span>5</span>
+                <span>6</span>
+                <span>7</span>
+              </datalist>
+            </div>
+            <IoMdAddCircle
+              size={34}
+              onClick={() => onPlus(onKeyChange, keyRef)}
+              className="cursor-pointer"
+            />
+          </div>
+        </label>
+        <div className="flex gap-4">
+          <button
+            className="regular-button flex-1 py-3"
+            ref={resetRef}
+            id="reset"
+            type="reset"
+            onClick={onReset}
+          >
+            Reset
+          </button>
+          <button
+            className="regular-button flex-1"
+            onClick={(e) => {
+              setIsModalOpen(true);
+              e.preventDefault();
+            }}
+          >
+            Load loop
+          </button>
         </div>
-      </label>
-      <button ref={resetRef} id="reset" type="reset" onClick={onReset}>
-        Reset
-      </button>
-    </form>
+      </form>
+
+      <CustomModal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        title="Saved loops"
+        className="h-[70%] flex flex-col"
+      >
+        <LoopsList setIsModalOpen={setIsModalOpen} />
+      </CustomModal>
+    </>
   );
 }

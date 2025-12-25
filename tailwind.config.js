@@ -11,7 +11,7 @@ module.exports = {
         primary: {
           100: "var(--main-color)", // #88c0d0
           200: "var(--sub-color)", // #929aaa
-          300: "var(--sub-alt-color)", // #2e3440
+          // 300: "var(--sub-alt-color)", // #2e3440
           400: "var(--caret-color)", // #eceff4
         },
         surface: {
@@ -23,10 +23,6 @@ module.exports = {
         error: {
           DEFAULT: "var(--error-color)", // #bf616a
           extra: "var(--error-extra-color)", // #793e44
-        },
-        colorfulError: {
-          DEFAULT: "var(--colorful-error-color)", // #bf616a
-          extra: "var(--colorful-error-extra-color)", // #793e44
         },
       },
     },

@@ -2,7 +2,7 @@ import VideoItem from "./VideoItem";
 
 const VideoList = ({ videos, onVideoSelect }) => {
   if (videos.length === 0) {
-    return <div className="h-screen">We didn't find anything...</div>;
+    return <div className="h-screen">We didn't find any videos...</div>;
   }
 
   const renderedList = videos.map((video) => {

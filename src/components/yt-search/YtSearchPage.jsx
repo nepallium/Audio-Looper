@@ -8,7 +8,7 @@ import useVideos from "../../hooks/useVideos";
 
 const YtSearchPage = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [videos, search] = useVideos("emmet cohen");
+  const [videos, search] = useVideos("khai dreams");
   // const videos = useRef(preloadedVids);
 
   useEffect(() => {

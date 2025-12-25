@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import WavesurferPlayer from "@wavesurfer/react";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
@@ -8,15 +8,36 @@ import Controls from "./Controls.jsx";
 import getCssVar from "../../utils/getCssVar.js";
 import { SyncLoader } from "react-spinners";
 import WaveSurfer from "wavesurfer.js";
+import isMobileDevice from "../../utils/isMobileDevice.js";
+import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
+import { saveLoops } from "../../api/indexedDB.js";
+import CustomModal from "../CustomModal.jsx";
+import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
+import InfoBanner from "../InfoBanner.jsx";
+import { getLoopRegions } from "../../api/indexedDB.js";
 
-export default function EditAudioPage({ audioRef }) {
+export default function EditAudioPage() {
+  const dispatch = useWaveDispatch();
+  const waveContext = useWaveContext();
+  const audioEl = waveContext.audioRef.current;
+  const video = waveContext.video;
+  const existingRegions = waveContext.existingRegions;
+
   const [wavesurfer, setWavesurfer] = useState(null);
   const [currTime, setCurrTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioEl, setAudioEl] = useState(null);
   const [loopMode, setLoopMode] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
   const [minPxPerSec, setMinPxPerSec] = useState(100);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loopName, setLoopName] = useState("");
+  const [loadedRegions, setLoadedRegions] = useState(existingRegions || []);
+  const [infoBanner, setInfoBanner] = useState({
+    message: "",
+    error: false,
+    trigger: 0,
+  });
+
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
   const timelineRef = useRef(null);
@@ -24,10 +45,29 @@ export default function EditAudioPage({ audioRef }) {
   const activeRegion = useRef(null);
   const loopModeRef = useRef(loopMode);
   const onReadyCalledRef = useRef(false);
+  const loopNameInputRef = useRef(null);
 
+  // auto select input txt audio on modal open
   useEffect(() => {
-    if (audioRef?.current) setAudioEl(audioRef.current);
-  }, [audioRef]);
+    if (isModalOpen) {
+      (async () => {
+        const loops = await getLoopRegions(video.id.videoId);
+        const nameIdx = loops.length + 1;
+        setLoopName(`Loop ${nameIdx}`);
+
+        // Delay selection until after the input updates
+        setTimeout(() => {
+          if (loopNameInputRef.current) {
+            loopNameInputRef.current.focus();
+            loopNameInputRef.current.setSelectionRange(
+              0,
+              loopNameInputRef.current.value.length
+            );
+          }
+        }, 0);
+      })();
+    }
+  }, [isModalOpen]);
 
   const timeline = useMemo(
     () =>
@@ -181,6 +221,7 @@ export default function EditAudioPage({ audioRef }) {
       if (curr >= newEnd) newEnd = wavesurfer.getDuration();
 
       r.setOptions({
+        id: `region_${Date.now()}`,
         start: curr,
         end: newEnd,
         color: "rgba(255, 0, 0, 0.1)",
@@ -208,6 +249,7 @@ export default function EditAudioPage({ audioRef }) {
       if (curr <= newStart) newStart = 0;
 
       r.setOptions({
+        id: `region_${Date.now()}`,
         start: newStart,
         end: curr,
         color: "rgba(255, 0, 0, 0.1)",
@@ -223,11 +265,24 @@ export default function EditAudioPage({ audioRef }) {
 
   function createRegion(start, end) {
     regions.addRegion({
+      id: `region_${Date.now()}`,
       start: start,
       end: end,
       color: "rgba(255, 0, 0, 0.1)",
     });
   }
+
+  const displayRegion = useCallback((region) => {
+    regions.clearRegions();
+    regions.addRegion({
+      ...region,
+    });
+    wavesurfer.setTime(region.start);
+  }, []);
+
+  useEffect(() => {
+    dispatch({ type: "set_displayRegionFct", displayRegion: displayRegion });
+  }, [displayRegion]);
 
   function handleLoopModeChange(e) {
     const newMode = !loopMode;
@@ -271,8 +326,41 @@ export default function EditAudioPage({ audioRef }) {
     setTimeout(checkReady, 100);
   };
 
+  async function onSave() {
+    let serializedRegion = null;
+    if (regions.getRegions().length > 0) {
+      const r = regions.getRegions().at(0);
+      serializedRegion = {
+        id: r.id,
+        name: loopName,
+        start: r.start,
+        end: r.end,
+        color: r.color,
+        drag: r.drag,
+        resize: r.resize,
+        resizeStart: r.resizeStart,
+        resizeEnd: r.resizeEnd,
+      };
+    }
+
+    const ok = await saveLoops(video.id.videoId, serializedRegion);
+    if (ok) {
+      setInfoBanner((b) => ({
+        message: "Saved successfully",
+        error: false,
+        trigger: b.trigger + 1,
+      }));
+    } else {
+      setInfoBanner((b) => ({
+        message: "Already saved",
+        error: false,
+        trigger: b.trigger + 1,
+      }));
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3 h-full w-full">
+    <div className="flex flex-col h-full w-full">
       {!isWaveReady && (
         <div className="h-full flex flex-col justify-center items-center gap-4">
           <p className="font-semibold text-[1.3rem] text-center">
@@ -291,15 +379,19 @@ export default function EditAudioPage({ audioRef }) {
             !isWaveReady && "opacity-0 pointer-events-none absolute"
           )}
         >
+          <p className="font-semibold text-xl mb-4 text-center text-balance line-clamp-2">
+            {decodeHtmlEntities(video.snippet.title)}
+          </p>
           <WavesurferPlayer
             height={300}
             waveColor={getCssVar("--sub-alt-color")}
-            backend="MediaElement"
+            backend="WebAudio"
             media={audioEl}
-            responsive={true}
-            normalize={true}
+            responsive={!isMobileDevice()}
+            normalize={isMobileDevice()}
             progressColor={getCssVar("--text-color")}
-            minPxPerSec={minPxPerSec}
+            minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
+            pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
             onReady={handleReady}
             onClick={handleWsClick}
             onPlay={() => setIsPlaying(true)}
@@ -322,18 +414,23 @@ export default function EditAudioPage({ audioRef }) {
             ref={timeSliderRef}
           />
 
-          <div className="flex flex-row justify-around">
+          <div className="flex flex-row justify-around my-5">
             <button
               onClick={handleLoopModeChange}
               className={clsx(
-                "px-6 py-2 rounded-md font-semibold",
-                loopMode
-                  ? "bg-primary-100 text-base-dark"
-                  : "bg-surface-200 text-base-light"
+                "regular-button",
+                loopMode && "bg-primary-100 text-base-dark"
               )}
             >{`Loop`}</button>
-            <button onClick={markStart}>Start</button>
-            <button onClick={markEnd}>End</button>
+            <button className="regular-button" onClick={markStart}>
+              Start
+            </button>
+            <button className="regular-button" onClick={markEnd}>
+              End
+            </button>
+            <button className="regular-button" onClick={onSave}>
+              Save
+            </button>
           </div>
 
           <div className="flex justify-center">
@@ -353,9 +450,39 @@ export default function EditAudioPage({ audioRef }) {
               />
             )}
           </div>
-          <Controls audioRef={audioRef} />
+          <Controls wavesurfer={wavesurfer} />
         </>
       )}
+      <CustomModal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        title="Save current loop"
+        footer={
+          <>
+            <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button onClick={onSave}>Save</button>
+          </>
+        }
+      >
+        <input
+          id="name"
+          name="name"
+          autoFocus
+          ref={loopNameInputRef}
+          placeholder="Loop name"
+          value={loopName}
+          onChange={(e) => setLoopName(e.target.value)}
+          className="text-base-dark bg-base-light rounded-md p-3
+               border-3 border-transparent 
+               focus:outline-none focus:border-primary-100"
+        />
+      </CustomModal>
+
+      <InfoBanner
+        message={infoBanner.message}
+        error={infoBanner.error}
+        trigger={infoBanner.trigger}
+      />
     </div>
   );
 }

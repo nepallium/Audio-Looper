@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef } from "react";
 import { BarLoader, SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
+import { isAudioIdExists, replaceTmpAudio } from "../../api/indexedDB";
 
 const baseStyles =
   "rounded-lg bg-surface-200 shadow flex flex-col items-center w-full";
@@ -28,23 +29,33 @@ const VideoDetail = ({ video }) => {
 
     const videoId = video.id.videoId;
     try {
-      const res = await fetch(`http://localhost:8000/api/audios/${videoId}`);
-      if (!res.ok) throw new Error("Failed to fetch video with id: " + videoId);
+      const isAudioSaved = await isAudioIdExists(videoId);
+      if (isAudioSaved) {
+        console.log("Loaded existing audio from IndexedDB");
+      } else {
+        console.log("Starting analyze for video:", video.id.videoId);
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`
+        );
+        console.log("Fetch response ok?", res.ok);
+        if (!res.ok) {
+          throw new Error("Failed to fetch video with id: " + videoId);
+        }
+        const blob = await res.blob();
 
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+        await replaceTmpAudio(video, blob);
+        console.log("Saved to IndexedDB");
+      }
 
       // Done loading → navigate
-      navigate("/audio-editor", { state: { videoId, blobUrl } });
+      navigate("/audio-editor", { state: { videoId, video } });
     } catch (err) {
       console.error(err);
     } finally {
       setIsLoading(false);
     }
   }
-  console.log(isIframeReady);
 
-  const videoSrc = `https://www.youtube.com/embed/${video.id.videoId}`;
   return (
     <>
       {!isIframeReady && (
@@ -63,14 +74,19 @@ const VideoDetail = ({ video }) => {
           <iframe
             className="w-full h-full"
             title="video player"
-            src={videoSrc}
+            src={`https://www.youtube.com/embed/${video.id.videoId}`}
             onLoad={() => setIsIframeReady(true)}
             allowFullScreen
           />
         </div>
-        <div className="w-[85%] min-h-[65px] flex justify-center items-center mb-2 px-6 py-3 rounded-lg bg-primary-100 text-white font-semibold">
+        <div
+          onClick={() => {
+            if (!isLoading) handleAnalyze();
+          }}
+          className="w-[85%] min-h-[65px] flex justify-center items-center mb-2 px-6 py-3 rounded-lg bg-primary-100 text-white font-semibold"
+        >
           {!isLoading ? (
-            <button onClick={handleAnalyze}>Analyze this video</button>
+            <button>Analyze this video</button>
           ) : (
             <div className="flex flex-col justify-center items-center gap-1">
               <div>Downloading audio</div>
