@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import EditAudioPage from "./EditAudioPage";
-import { loadAudioFromDB } from "../../api/indexedDB";
+import { loadAudioFromDB, loadTmpAudioFromDB } from "../../api/indexedDB";
 import { useWaveContext, useWaveDispatch, WaveProvider } from "./WaveContext";
 
 export default function Controller() {
@@ -13,20 +13,28 @@ export default function Controller() {
 }
 
 function ControllerInner() {
-  const audioRef = useRef(null);
   const [audioEl, setAudioEl] = useState(null);
+  const [isNoAudio, setIsNoAudio] = useState(false);
 
-  const location = useLocation();
-  const { videoId, video, regions = null } = location.state;
-
+  const audioRef = useRef(null);
   const dispatch = useWaveDispatch();
-  const waveContext = useWaveContext();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function generateBlobUrl() {
-      let { blobObj } = await loadAudioFromDB(videoId);
+    async function init() {
+      let videoId = "",
+        video;
+
+      if (location.state) {
+        ({ videoId, video } = location.state);
+      } else {
+        ({ id: videoId, video } = await loadTmpAudioFromDB());
+      }
+
+      const { blobObj } = await loadAudioFromDB(videoId);
       if (!blobObj) {
-        // route to main page or show no audio loaded page
+        setIsNoAudio(true);
       }
 
       const blobUrl = URL.createObjectURL(blobObj);
@@ -42,18 +50,39 @@ function ControllerInner() {
       });
 
       setAudioEl(audioRef.current);
+
+      dispatch({ type: "set_video", video });
     }
 
-    generateBlobUrl();
-    dispatch({ type: "set_video", video: video });
-  }, []);
+    init();
+  }, [location, dispatch]);
 
   useEffect(() => {
-    dispatch({ type: "set_audioRef", audioRef: audioRef });
-  }, [audioRef]);
+    dispatch({ type: "set_audioRef", audioRef });
+  }, [dispatch]);
+
+  if (isNoAudio) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center
+      page-layout h-screen text-base-light gap-12"
+      >
+        <p className="font-semibold text-xl">Audio waveform will appear here</p>
+        <div className="flex flex-col gap-4 items-center">
+          <p className="underline" onClick={() => navigate("/")}>
+            Load a saved audio
+          </p>
+          <span> or</span>
+          <p className="underline" onClick={() => navigate("/yt-search")}>
+            Search with YouTube
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div id="edit-audio-page" className="page-layout h-screen text-base-light">
+    <div className="page-layout h-screen text-base-light">
       <audio ref={audioRef} preload="metadata"></audio>
       {audioEl && <EditAudioPage />}
     </div>

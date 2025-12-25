@@ -5,11 +5,11 @@ import AudiosSearchPage from "./components/audio-search/AudiosSearchPage";
 const routes = [
   {
     path: "/",
-    element: <YtSearchPage />,
+    element: <AudiosSearchPage />,
   },
   {
-    path: "/search-audios",
-    element: <AudiosSearchPage />,
+    path: "/yt-search",
+    element: <YtSearchPage />,
   },
   {
     path: "/audio-editor",
