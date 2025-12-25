@@ -54,7 +54,7 @@ export async function replaceTmpAudio(video, blob) {
   await new Promise((resolve, reject) => {
     const putRequest = store.put({
       id: video.id.videoId,
-      isTmp: true,
+      isTmp: 1,
       name: video.snippet.title,
       video: video,
       blobObj: blob,
@@ -113,7 +113,7 @@ export async function saveLoops(key, region) {
 
   // console.log(existing);
   if (existing && existing.isTmp) {
-    existing.isTmp = false;
+    existing.isTmp = 0;
   }
   if (region) {
     const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
