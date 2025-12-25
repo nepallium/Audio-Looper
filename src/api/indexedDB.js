@@ -4,8 +4,16 @@ export function openDB() {
 
     req.onupgradeneeded = () => {
       const db = req.result;
+      let store;
       if (!db.objectStoreNames.contains("audios")) {
-        db.createObjectStore("audios", { keyPath: "id" });
+        store = db.createObjectStore("audios", { keyPath: "id" });
+      } else {
+        store = req.transaction.objectStore("audios");
+      }
+
+      // Create index on isTmp if it doesn't exist (only for new upgrades)
+      if (!store.indexNames.contains("isTmp")) {
+        store.createIndex("by_isTmp", "isTmp", { unique: false });
       }
     };
 
@@ -13,25 +21,56 @@ export function openDB() {
 
     req.onerror = (event) => {
       console.log("An error occured with IndexedDB: ", event);
-      reject();
+      reject(req.error);
     };
   });
 }
 
-export async function saveTmpAudioToDB(video, blob) {
+export async function replaceTmpAudio(video, blob) {
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
-  tx.objectStore("audios").put({
-    isTmp: true,
-    id: video.id.videoId,
-    name: video.snippet.title,
-    video: video,
-    blobObj: blob,
-    regions: [],
+  const store = tx.objectStore("audios");
+
+  const index = store.index("by_isTmp");
+
+  // Delete all tmp audios
+  await new Promise((resolve, reject) => {
+    const request = index.openCursor(IDBKeyRange.only(1));
+
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete(); // Delete this tmp entry
+        cursor.continue(); // Check if there are more (though there should only be one)
+      } else {
+        resolve();
+      }
+    };
+
+    request.onerror = () => reject(request.error);
   });
-  await tx.done;
+
+  // Add the new tmp audio
+  await new Promise((resolve, reject) => {
+    const putRequest = store.put({
+      id: video.id.videoId,
+      isTmp: true,
+      name: video.snippet.title,
+      video: video,
+      blobObj: blob,
+      regions: [],
+    });
+
+    putRequest.onsuccess = () => resolve();
+    putRequest.onerror = () => reject(putRequest.error);
+  });
+
   return true;
 }
+
+// export async function loadTmpAudioFromDB() {
+//   const db = await.
+// }
 
 export async function loadAudioFromDB(key) {
   const db = await openDB();

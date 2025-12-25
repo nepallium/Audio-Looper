@@ -3,7 +3,7 @@ import { BarLoader, SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
-import { isAudioIdExists, saveTmpAudioToDB } from "../../api/indexedDB";
+import { isAudioIdExists, replaceTmpAudio } from "../../api/indexedDB";
 
 const baseStyles =
   "rounded-lg bg-surface-200 shadow flex flex-col items-center w-full";
@@ -36,17 +36,14 @@ const VideoDetail = ({ video }) => {
         console.log("Starting analyze for video:", video.id.videoId);
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`
-          // `http://localhost:8000/api/audios/${videoId}`
         );
         console.log("Fetch response ok?", res.ok);
         if (!res.ok) {
           throw new Error("Failed to fetch video with id: " + videoId);
         }
         const blob = await res.blob();
-        // console.log("Blob size:", blob.size);
-        // const blobUrl = URL.createObjectURL(blob);
 
-        await saveTmpAudioToDB(video, blob);
+        await replaceTmpAudio(video, blob);
         console.log("Saved to IndexedDB");
       }
 
