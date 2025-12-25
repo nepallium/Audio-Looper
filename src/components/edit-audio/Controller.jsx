@@ -61,23 +61,28 @@ function ControllerInner() {
     dispatch({ type: "set_audioRef", audioRef });
   }, [dispatch]);
 
-  if (isNoAudio) {
+  if (!isNoAudio) {
     return (
-      <div
-        className="flex flex-col items-center justify-center
-      page-layout h-screen text-base-light gap-12"
-      >
-        <p className="font-semibold text-xl">Audio waveform will appear here</p>
+      <main className="flex flex-col items-center justify-center page-layout h-screen text-base-light gap-12">
+        <h1 className="font-semibold text-xl">
+          Audio waveform will appear here
+        </h1>
         <div className="flex flex-col gap-4 items-center">
-          <p className="underline" onClick={() => navigate("/")}>
+          <button
+            className="underline text-primary-100 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
             Load a saved audio
-          </p>
-          <span> or</span>
-          <p className="underline" onClick={() => navigate("/yt-search")}>
+          </button>
+          <span>or</span>
+          <button
+            className="underline text-primary-100 cursor-pointer"
+            onClick={() => navigate("/yt-search")}
+          >
             Search with YouTube
-          </p>
+          </button>
         </div>
-      </div>
+      </main>
     );
   }
 
