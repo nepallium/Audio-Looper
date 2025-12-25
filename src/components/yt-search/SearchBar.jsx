@@ -13,9 +13,6 @@ const SearchBar = ({ onFormSubmit }) => {
     <div className="w-full max-w-xl mx-auto px-4">
       <form onSubmit={onSubmit} className="w-full">
         <div className="flex flex-col gap-2">
-          <label className="text-center text-lg font-medium">
-            Video Search
-          </label>
           <input
             type="text"
             value={term}

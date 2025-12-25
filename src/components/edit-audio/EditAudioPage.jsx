@@ -15,6 +15,7 @@ import CustomModal from "../CustomModal.jsx";
 import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
 import InfoBanner from "../InfoBanner.jsx";
 import { getLoopRegions } from "../../api/indexedDB.js";
+import Header from "../Header.jsx";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -379,25 +380,25 @@ export default function EditAudioPage() {
             !isWaveReady && "opacity-0 pointer-events-none absolute"
           )}
         >
-          <p className="font-semibold text-xl mb-4 text-center text-balance line-clamp-2">
-            {decodeHtmlEntities(video.snippet.title)}
-          </p>
-          <WavesurferPlayer
-            height={300}
-            waveColor={getCssVar("--sub-alt-color")}
-            backend="WebAudio"
-            media={audioEl}
-            responsive={!isMobileDevice()}
-            normalize={isMobileDevice()}
-            progressColor={getCssVar("--text-color")}
-            minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
-            pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
-            onReady={handleReady}
-            onClick={handleWsClick}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            plugins={wsPlugins}
-          />
+          <Header title={decodeHtmlEntities(video.snippet.title)} />
+          <div className="mt-4">
+            <WavesurferPlayer
+              height={320}
+              waveColor={getCssVar("--sub-alt-color")}
+              backend="WebAudio"
+              media={audioEl}
+              responsive={!isMobileDevice()}
+              normalize={isMobileDevice()}
+              progressColor={getCssVar("--text-color")}
+              minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
+              pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
+              onReady={handleReady}
+              onClick={handleWsClick}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              plugins={wsPlugins}
+            />
+          </div>
         </div>
       )}
 
@@ -453,30 +454,6 @@ export default function EditAudioPage() {
           <Controls wavesurfer={wavesurfer} />
         </>
       )}
-      <CustomModal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        title="Save current loop"
-        footer={
-          <>
-            <button onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button onClick={onSave}>Save</button>
-          </>
-        }
-      >
-        <input
-          id="name"
-          name="name"
-          autoFocus
-          ref={loopNameInputRef}
-          placeholder="Loop name"
-          value={loopName}
-          onChange={(e) => setLoopName(e.target.value)}
-          className="text-base-dark bg-base-light rounded-md p-3
-               border-3 border-transparent 
-               focus:outline-none focus:border-primary-100"
-        />
-      </CustomModal>
 
       <InfoBanner
         message={infoBanner.message}

@@ -6,6 +6,7 @@ import { SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { IoWarning } from "react-icons/io5";
 import CustomModal from "../CustomModal";
+import Header from "../Header";
 
 const AudiosSearchPage = () => {
   const [allAudios, setAllAudios] = useState(null); // Full database
@@ -106,7 +107,7 @@ const AudiosSearchPage = () => {
 
   return (
     <div className="flex flex-col page-layout text-base-light">
-      <h1 className="header">Saved Audios</h1>
+      <Header title="Saved Audios" />
 
       <div className="p-4 flex flex-col flex-1 min-h-0">
         <div className="flex flex-col gap-3 flex-1 min-h-0">

@@ -18,11 +18,12 @@
 }
 
 .page-layout {
-  @apply bg-surface-100 h-full;
+  @apply bg-surface-100 min-h-screen;
 }
 
 .header {
-  @apply text-center bg-surface-200 p-6 text-2xl font-semibold tracking-wide border-b-4 border-surface-300;
+  @apply text-center bg-surface-200 p-6 text-2xl font-semibold tracking-wide border-b-4 border-surface-300 
+  text-balance line-clamp-2;
 }
 
 .regular-button {

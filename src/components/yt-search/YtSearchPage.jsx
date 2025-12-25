@@ -4,6 +4,7 @@ import SearchBar from "./SearchBar";
 import VideoList from "./VideoList";
 import VideoDetail from "./VideoDetail";
 import useVideos from "../../hooks/useVideos";
+import Header from "../Header";
 // import { preloadedVids } from "../../../dev-tmp/yt-data";
 
 const YtSearchPage = () => {
@@ -17,15 +18,18 @@ const YtSearchPage = () => {
 
   return (
     <div className="page-layout !pb-5 text-base-light">
-      <SearchBar onFormSubmit={search} />
-      <div className="grid grid-cols-1 lg:grid-cols-3">
-        <VideoDetail video={selectedVideo} />
-        <div className="lg:col-span-1">
-          <VideoList
-            onVideoSelect={setSelectedVideo}
-            videos={videos}
-            // videos={videos.current}
-          />
+      <Header title="Youtube Search" />
+      <div className="p-4">
+        <SearchBar onFormSubmit={search} />
+        <div className="grid grid-cols-1 lg:grid-cols-3">
+          <VideoDetail video={selectedVideo} />
+          <div className="lg:col-span-1">
+            <VideoList
+              onVideoSelect={setSelectedVideo}
+              videos={videos}
+              // videos={videos.current}
+            />
+          </div>
         </div>
       </div>
     </div>
