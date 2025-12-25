@@ -68,17 +68,39 @@ export async function replaceTmpAudio(video, blob) {
   return true;
 }
 
-// export async function loadTmpAudioFromDB() {
-//   const db = await.
-// }
+export async function loadTmpAudioFromDB() {
+  const db = await openDB();
+  const tx = db.transaction("audios", "readonly");
+  const store = tx.objectStore("audios");
+
+  const index = store.index("by_isTmp");
+
+  const result = await new Promise((resolve, reject) => {
+    const request = index.openCursor(IDBKeyRange.only(1));
+
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete(); // Delete this tmp entry
+        cursor.continue(); // Check if there are more (though there should only be one)
+      } else {
+        resolve();
+      }
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+
+  return result;
+}
 
 export async function loadAudioFromDB(key) {
   const db = await openDB();
   const tx = db.transaction("audios", "readonly");
-  const result = await new Promise((resolve) => {
+  const result = await new Promise((resolve, reject) => {
     const req = tx.objectStore("audios").get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => resolve(null);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
   });
 
   return result;
@@ -87,20 +109,19 @@ export async function loadAudioFromDB(key) {
 export async function isAudioIdExists(key) {
   const db = await openDB();
   const tx = db.transaction("audios", "readonly");
-  const result = await new Promise((resolve) => {
+  const result = await new Promise((resolve, reject) => {
     const req = tx.objectStore("audios").count(key);
     req.onsuccess = (e) => {
       const count = e.target.result;
       resolve(count > 0);
     };
-    req.onerror = () => resolve(null);
+    req.onerror = () => reject(req.error);
   });
 
   return result;
 }
 
 export async function saveLoops(key, region) {
-  let isSaveSuccess = true;
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
@@ -117,15 +138,19 @@ export async function saveLoops(key, region) {
   }
   if (region) {
     const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
-    if (isRegionUnique) {
-      existing.regions.push(region);
-    } else {
-      isSaveSuccess = false;
+    if (!isRegionUnique) {
+      return false; // region already exists
     }
+    existing.regions.push(region);
   }
-  await store.put(existing);
-  await tx.done;
-  return isSaveSuccess;
+
+  // store loop or new audio in database
+  await new Promise((resolve, reject) => {
+    const request = store.put(existing);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+  return true;
 }
 
 export async function getAudios() {
@@ -203,10 +228,10 @@ export async function deleteAudio(key) {
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
 
-  const result = await new Promise((resolve) => {
+  await new Promise((resolve, reject) => {
     const req = store.delete(key);
-    req.onsuccess = () => resolve(true);
-    req.onerror = () => resolve(false);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
   });
 
   return result;
@@ -216,11 +241,11 @@ export async function clearAudios() {
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
-  const result = await new Promise((resolve) => {
+  await new Promise((resolve, reject) => {
     const req = store.clear();
-    req.onsuccess = () => resolve(true);
-    req.onerror = () => resolve(false);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
   });
 
-  return result;
+  return true;
 }
