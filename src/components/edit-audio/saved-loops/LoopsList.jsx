@@ -13,7 +13,7 @@ export default function LoopsList({ setIsModalOpen }) {
     async function loadRegions() {
       const loaded = await getLoopRegions(videoId);
       let nameIdx = 1;
-      const loadedRegions = loaded.map((region) => {
+      let loadedRegions = loaded.map((region) => {
         let name;
         if (!region.name) {
           name = `Loop ${nameIdx++}`;
@@ -33,5 +33,9 @@ export default function LoopsList({ setIsModalOpen }) {
     loadRegions();
   }, []);
 
-  return <div className="">{regions}</div>;
+  return (
+    <div className="flex flex-col h-full min-h-0 overflow-y-auto bg-surface-100 rounded-lg p-3">
+      {regions.length === 0 ? "Saved loop regions will appear here" : regions}
+    </div>
+  );
 }

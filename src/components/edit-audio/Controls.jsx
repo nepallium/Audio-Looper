@@ -245,7 +245,7 @@ export default function Controls({ wavesurfer }) {
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         title="Saved loops"
-        className="h-[70%]"
+        className="h-[70%] flex flex-col"
       >
         <LoopsList setIsModalOpen={setIsModalOpen} />
       </CustomModal>

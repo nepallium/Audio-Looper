@@ -29,7 +29,7 @@ export default function CustomModal({
       )}
 
       {/* Body content */}
-      <div>{children}</div>
+      <div className="flex flex-col min-h-0 flex-1">{children}</div>
 
       {/* Footer buttons */}
       {footer && <div className="flex gap-6 justify-end">{footer}</div>}

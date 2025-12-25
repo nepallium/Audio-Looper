@@ -10,7 +10,8 @@ export default function LoopCard({ region, setIsModalOpen }) {
         waveContext.displayRegion(region);
         setIsModalOpen(false);
       }}
-      className="flex justify-between"
+      className="flex justify-between 
+      py-3 border-b border-gray-300 first:pt-0 last:border-b-0 last:pb-0"
     >
       {region.name}
       <div>
