@@ -7,7 +7,7 @@ export default function AudioItem({ id, name, video, regions, openModal }) {
   const navigate = useNavigate();
 
   function handleClick(e) {
-    navigate("/audio-editor", { state: { videoId: id, video, regions } });
+    navigate("/audio-editor", { state: { videoId: id, video } });
   }
 
   return (

@@ -73,22 +73,11 @@ export async function loadTmpAudioFromDB() {
   const tx = db.transaction("audios", "readonly");
   const store = tx.objectStore("audios");
 
-  const index = store.index("by_isTmp");
-
   const result = await new Promise((resolve, reject) => {
-    const request = index.openCursor(IDBKeyRange.only(1));
+    const req = store.index("by_isTmp").get(1);
 
-    request.onsuccess = (event) => {
-      const cursor = event.target.result;
-      if (cursor) {
-        cursor.delete(); // Delete this tmp entry
-        cursor.continue(); // Check if there are more (though there should only be one)
-      } else {
-        resolve();
-      }
-    };
-
-    request.onerror = () => reject(request.error);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
   });
 
   return result;
