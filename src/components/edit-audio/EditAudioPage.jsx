@@ -382,12 +382,6 @@ export default function EditAudioPage() {
           )}
         >
           <Header title={decodeHtmlEntities(video.snippet.title)} />
-          {/* <div className="h-max relative flex justify-center p">
-            <BurgerMenu />
-            <p className="font-semibold text-xl mb-4 text-center text-balance line-clamp-2 max-w-[75%]">
-              {decodeHtmlEntities(video.snippet.title)}
-            </p>
-          </div> */}
           <div className="">
             <WavesurferPlayer
               height={320}
@@ -444,14 +438,14 @@ export default function EditAudioPage() {
           <div className="flex justify-center">
             {isPlaying ? (
               <FaPauseCircle
-                size={50}
+                size={65}
                 color={getCssVar("--clr-primary-a30")}
                 onClick={handlePlayPause}
                 className="cursor-pointer"
               />
             ) : (
               <FaPlayCircle
-                size={50}
+                size={65}
                 color={getCssVar("--clr-primary-a30")}
                 onClick={handlePlayPause}
                 className="cursor-pointer"
