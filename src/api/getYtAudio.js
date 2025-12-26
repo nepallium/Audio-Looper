@@ -3,8 +3,7 @@ import { spawn } from "child_process";
 export function getYtAudio(req, res) {
   const videoId = req.params.videoId;
   if (!videoId) {
-    res.status(400).send("Missing videoId");
-    return;
+    return res.status(400).send("Missing videoId");
   }
 
   const url = `https://www.youtube.com/watch?v=${videoId}`;
@@ -18,6 +17,16 @@ export function getYtAudio(req, res) {
       "-", // pipe to stdout
       url,
     ]);
+
+    req.on("close", () => {
+      ytProcess.kill("SIGTERM");
+
+      setTimeout(() => {
+        if (!ytProcess.killed) {
+          ytProcess.kill("SIGKILL");
+        }
+      }, 1000);
+    });
 
     ytProcess.on("error", (err) => {
       console.error("yt-dlp error:", err);

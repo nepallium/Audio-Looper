@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { BarLoader, SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,21 @@ const baseStyles =
 const VideoDetail = ({ video }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isIframeReady, setIsIframeReady] = useState(false);
+  const abortRef = useRef(null);
   const navigate = useNavigate();
+
+  // cleanup for when user navigates away
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, []);
+
+  // abort when user clicks new video
+  useEffect(() => {
+    if (abortRef.current) handleCancel();
+    setIsIframeReady(false);
+  }, [video]);
 
   if (!video) {
     return (
@@ -25,35 +39,56 @@ const VideoDetail = ({ video }) => {
 
   async function handleAnalyze() {
     if (!video) return;
+
+    // abort existing req
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
 
     const videoId = video.id.videoId;
     try {
+      if (controller.signal.aborted) return;
+
       const isAudioSaved = await isAudioIdExists(videoId);
-      if (isAudioSaved) {
-        console.log("Loaded existing audio from IndexedDB");
-      } else {
+      if (!isAudioSaved) {
         console.log("Starting analyze for video:", video.id.videoId);
         const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`
+          `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`,
+          { signal: controller.signal }
         );
+        if (controller.signal.aborted) return;
         console.log("Fetch response ok?", res.ok);
         if (!res.ok) {
           throw new Error("Failed to fetch video with id: " + videoId);
         }
         const blob = await res.blob();
+        if (controller.signal.aborted) return;
 
         await replaceTmpAudio(video, blob);
-        console.log("Saved to IndexedDB");
+        if (controller.signal.aborted) return;
       }
 
       // Done loading → navigate
       navigate("/audio-editor", { state: { videoId, video } });
     } catch (err) {
-      console.error(err);
+      if (err.name === "AbortError") {
+        console.log("dwl cancelled");
+      } else {
+        console.error(err);
+      }
     } finally {
-      setIsLoading(false);
+      if (abortRef.current === controller) {
+        setIsLoading(false);
+      }
     }
+  }
+
+  function handleCancel() {
+    abortRef.current.abort();
+    abortRef.current = null;
+    setIsLoading(false);
   }
 
   return (
@@ -82,6 +117,7 @@ const VideoDetail = ({ video }) => {
         <div
           onClick={() => {
             if (!isLoading) handleAnalyze();
+            else handleCancel();
           }}
           className="w-[85%] min-h-[65px] flex justify-center items-center mb-2 px-6 py-3 rounded-lg bg-primary-100 text-white font-semibold"
         >
