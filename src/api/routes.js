@@ -1,8 +1,8 @@
-import express from 'express'
-import getYtAudio from './getYtAudio.js'
+import express from "express";
+import { getYtAudio } from "./getYtAudio.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/', getYtAudio)
+router.get("/getYtAudio/:videoId", getYtAudio);
 
-export default router
+export default router;

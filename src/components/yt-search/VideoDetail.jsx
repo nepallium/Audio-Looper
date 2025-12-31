@@ -55,7 +55,7 @@ const VideoDetail = ({ video }) => {
       if (!isAudioSaved) {
         console.log("Starting analyze for video:", video.id.videoId);
         const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/audios/${videoId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/getYtAudio/${videoId}`,
           { signal: controller.signal }
         );
         if (controller.signal.aborted) return;
