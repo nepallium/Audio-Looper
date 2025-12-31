@@ -1,4 +1,8 @@
 import { spawn } from "child_process";
+import "dotenv/config";
+
+const API_KEY = process.env.YTDLM_KEY;
+const YTDLM_URL = process.env.YTDLM_URL;
 
 export function getYtAudio(req, res) {
   const videoId = req.params.videoId;
