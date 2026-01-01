@@ -77,7 +77,7 @@ export default function EditAudioPage() {
   }, []);
 
   useEffect(() => {
-    setWaveHeight(screenHeight * 0.4);
+    setWaveHeight(screenHeight * 0.3);
   }, [screenHeight]);
 
   const timeline = useMemo(

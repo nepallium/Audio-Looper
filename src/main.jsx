@@ -9,6 +9,11 @@ const router = createBrowserRouter(routes);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <div className="bg-surface-100">
+      <div className="md:max-w-[768px] md:mx-auto">
+        <RouterProvider router={router} />
+      </div>
+    </div>
+    {/* <RouterProvider router={router} /> */}
   </StrictMode>
 );
