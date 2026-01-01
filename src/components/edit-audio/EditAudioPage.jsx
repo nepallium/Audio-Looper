@@ -438,14 +438,14 @@ export default function EditAudioPage() {
           <div className="flex justify-center">
             {isPlaying ? (
               <FaPauseCircle
-                size={65}
+                size={55}
                 color={getCssVar("--clr-primary-a30")}
                 onClick={handlePlayPause}
                 className="cursor-pointer"
               />
             ) : (
               <FaPlayCircle
-                size={65}
+                size={55}
                 color={getCssVar("--clr-primary-a30")}
                 onClick={handlePlayPause}
                 className="cursor-pointer"

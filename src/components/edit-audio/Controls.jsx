@@ -148,7 +148,7 @@ export default function Controls({ wavesurfer }) {
 
   return (
     <>
-      <form className="flex-1 flex flex-col justify-between">
+      <form className="flex-1 flex flex-col justify-between p-4">
         <label>
           {`Tempo: ${tempoValue}`}
           <div className="flex items-center gap-2">
