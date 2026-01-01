@@ -50,16 +50,6 @@ button:hover {
   --range-thumb-size: 20px;
 }
 
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  padding: 5px 0; /* space for thumb */
-  border-radius: 3px;
-  cursor: pointer;
-  @apply bg-primary-200;
-}
-
 .sliderticks {
   display: flex;
   justify-content: space-between;
@@ -74,6 +64,16 @@ input[type="range"] {
   background: #d3d3d3;
   line-height: 40px;
   margin-bottom: 50px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  padding: 5px 0; /* space for thumb */
+  border-radius: 3px;
+  cursor: pointer;
+  @apply bg-primary-200;
 }
 
 /* WebKit thumb */

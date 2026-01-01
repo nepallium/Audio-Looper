@@ -7,16 +7,14 @@ import clsx from "clsx";
 import Controls from "./Controls.jsx";
 import getCssVar from "../../utils/getCssVar.js";
 import { SyncLoader } from "react-spinners";
-import WaveSurfer from "wavesurfer.js";
 import isMobileDevice from "../../utils/isMobileDevice.js";
 import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
 import { saveLoops } from "../../api/indexedDB.js";
-import CustomModal from "../CustomModal.jsx";
 import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
 import InfoBanner from "../InfoBanner.jsx";
 import { getLoopRegions } from "../../api/indexedDB.js";
 import Header from "../Header.jsx";
-import BurgerMenu from "../BurgerMenu.jsx";
+import useScreenHeight from "../../hooks/useScreenHeight.js";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -24,8 +22,10 @@ export default function EditAudioPage() {
   const audioEl = waveContext.audioRef.current;
   const video = waveContext.video;
   const existingRegions = waveContext.existingRegions;
+  const screenHeight = useScreenHeight();
 
   const [wavesurfer, setWavesurfer] = useState(null);
+  const [waveHeight, setWaveHeight] = useState(0);
   const [currTime, setCurrTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loopMode, setLoopMode] = useState(false);
@@ -33,7 +33,6 @@ export default function EditAudioPage() {
   const [minPxPerSec, setMinPxPerSec] = useState(100);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loopName, setLoopName] = useState("");
-  const [loadedRegions, setLoadedRegions] = useState(existingRegions || []);
   const [infoBanner, setInfoBanner] = useState({
     message: "",
     error: false,
@@ -47,29 +46,11 @@ export default function EditAudioPage() {
   const activeRegion = useRef(null);
   const loopModeRef = useRef(loopMode);
   const onReadyCalledRef = useRef(false);
-  const loopNameInputRef = useRef(null);
+  const waveContainerRef = useRef(null);
 
-  // auto select input txt audio on modal open
   useEffect(() => {
-    if (isModalOpen) {
-      (async () => {
-        const loops = await getLoopRegions(video.id.videoId);
-        const nameIdx = loops.length + 1;
-        setLoopName(`Loop ${nameIdx}`);
-
-        // Delay selection until after the input updates
-        setTimeout(() => {
-          if (loopNameInputRef.current) {
-            loopNameInputRef.current.focus();
-            loopNameInputRef.current.setSelectionRange(
-              0,
-              loopNameInputRef.current.value.length
-            );
-          }
-        }, 0);
-      })();
-    }
-  }, [isModalOpen]);
+    setWaveHeight(screenHeight * 0.35);
+  }, [screenHeight]);
 
   const timeline = useMemo(
     () =>
@@ -384,7 +365,7 @@ export default function EditAudioPage() {
           <Header title={decodeHtmlEntities(video.snippet.title)} />
           <div className="">
             <WavesurferPlayer
-              height={320}
+              height={waveHeight}
               waveColor={getCssVar("--sub-alt-color")}
               backend="WebAudio"
               media={audioEl}
