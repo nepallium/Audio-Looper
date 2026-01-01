@@ -1,5 +1,10 @@
 {
   "appId": "com.example.app",
   "appName": "Audio Looper",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "http://192.168.11.122:5174",
+    "cleartext": true
+  },
+  "bundledWebRuntime": false
 }
