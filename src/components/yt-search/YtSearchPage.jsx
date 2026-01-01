@@ -20,15 +20,13 @@ const YtSearchPage = () => {
       <Header title="Youtube Search" />
       <div className="p-4">
         <SearchBar onFormSubmit={search} />
-        <div className="grid grid-cols-1 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           <VideoDetail video={selectedVideo} />
-          <div className="lg:col-span-1">
-            <VideoList
-              onVideoSelect={setSelectedVideo}
-              videos={videos}
-              // videos={videos.current}
-            />
-          </div>
+          <VideoList
+            onVideoSelect={setSelectedVideo}
+            videos={videos}
+            // videos={videos.current}
+          />
         </div>
       </div>
     </div>

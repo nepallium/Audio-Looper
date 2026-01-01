@@ -10,7 +10,7 @@ const router = createBrowserRouter(routes);
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <div className="bg-surface-100">
-      <div className="md:max-w-[768px] md:mx-auto">
+      <div className="md:max-w-[600px] md:mx-auto">
         <RouterProvider router={router} />
       </div>
     </div>
