@@ -1,53 +1,120 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 @layer base {
   :root {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", sans-serif; /* Slider variables */
+    --slider-thumb-size: 24px;
+    --slider-track-height: 8px; /* Colors */
+    --slider-fill: #88c0d0;
+    --slider-bg: #eceff4;
   }
-
   html,
   body,
   #root {
-    height: 100%;
     width: 100%;
+    height: 100%;
     margin: 0;
     padding: 0;
   }
 }
-
 .page-layout {
   @apply bg-surface-100 min-h-screen;
 }
-
 .header {
-  @apply text-center bg-surface-200 p-6 text-2xl font-semibold tracking-wide border-b-4 border-surface-300  w-full
-  text-balance;
-  padding-top: max(env(safe-area-inset-top), 0);
+  @apply text-center bg-surface-200 p-6 pl-8 text-2xl font-semibold tracking-wide border-b-4 border-surface-300 text-balance;
+  padding-top: calc(env(safe-area-inset-top) + 1rem);
 }
-
 .regular-button {
   @apply px-6 py-2 rounded-md font-semibold bg-surface-200 text-base-light;
+}
+button:hover {
+  cursor: pointer;
 }
 
 #waveform ::part(region) {
   background-color: rgb(var(--main-color-rgb), 0.3);
   pointer-events: none;
 }
-
 #waveform ::part(region-handle-left),
 #waveform ::part(region-handle-right) {
   @apply bg-primary-100 opacity-100 w-1 border-none;
   pointer-events: none;
 }
 
-button:hover {
+input[type="range"],
+.timeline-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: var(--slider-track-height);
+  border-radius: 4px;
+  background: var(--slider-bg);
   cursor: pointer;
+  overflow: visible;
+  margin: 12px 0;
 }
 
-:root {
-  --range-thumb-size: 20px;
+/* WebKit track + progress */
+input[type="range"]::-webkit-slider-runnable-track,
+.timeline-slider::-webkit-slider-runnable-track {
+  height: var(--slider-track-height);
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    var(--slider-fill) 0%,
+    var(--slider-fill) var(--value, 0%),
+    var(--slider-bg) var(--value, 0%),
+    var(--slider-bg) 100%
+  );
+}
+
+/* WebKit thumb */
+input[type="range"]::-webkit-slider-thumb,
+.timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  border-radius: 50%;
+  background: var(--slider-fill);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* Firefox track + progress */
+input[type="range"]::-moz-range-track,
+.timeline-slider::-moz-range-track {
+  height: var(--slider-track-height);
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    var(--slider-fill) 0%,
+    var(--slider-fill) var(--value, 0%),
+    var(--slider-bg) var(--value, 0%),
+    var(--slider-bg) 100%
+  );
+}
+
+/* Firefox thumb */
+input[type="range"]::-moz-range-thumb,
+.timeline-slider::-moz-range-thumb {
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  border-radius: 50%;
+  background: var(--slider-fill);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+input[type="range"]:focus,
+.timeline-slider:focus {
+  outline: none;
 }
 
 .sliderticks {
@@ -55,7 +122,6 @@ button:hover {
   justify-content: space-between;
   padding: 0 10px;
 }
-
 .sliderticks span {
   display: flex;
   justify-content: center;
@@ -64,46 +130,4 @@ button:hover {
   background: #d3d3d3;
   line-height: 40px;
   margin-bottom: 50px;
-}
-
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  padding: 5px 0; /* space for thumb */
-  border-radius: 3px;
-  cursor: pointer;
-  @apply bg-primary-200;
-}
-
-/* WebKit thumb */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: var(--range-thumb-size);
-  height: var(--range-thumb-size);
-  border-radius: 50%;
-  @apply bg-primary-100;
-  border: none;
-  margin: 0; /* use padding to center */
-}
-
-/* Firefox */
-input[type="range"]::-moz-range-thumb {
-  width: var(--range-thumb-size);
-  height: var(--range-thumb-size);
-  border-radius: 50%;
-  @apply bg-primary-100;
-  border: none;
-  margin: 0;
-}
-
-input[type="range"]::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-}
-
-input[type="range"]::-moz-range-progress {
-  @apply bg-primary-100;
-  height: 6px;
-  border-radius: 3px;
 }

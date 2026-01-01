@@ -15,6 +15,7 @@ import InfoBanner from "../InfoBanner.jsx";
 import { getLoopRegions } from "../../api/indexedDB.js";
 import Header from "../Header.jsx";
 import useScreenHeight from "../../hooks/useScreenHeight.js";
+import { KeepAwake } from "@capacitor-community/keep-awake";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -47,6 +48,33 @@ export default function EditAudioPage() {
   const loopModeRef = useRef(loopMode);
   const onReadyCalledRef = useRef(false);
   const waveContainerRef = useRef(null);
+
+  useEffect(() => {
+    const keepScreenAwake = async () => {
+      try {
+        await KeepAwake.keepAwake();
+        console.log("Screen wake lock active");
+      } catch (err) {
+        console.log("KeepAwake not supported on this platform", err);
+      }
+    };
+
+    const allowScreenSleep = async () => {
+      try {
+        await KeepAwake.allowSleep();
+        console.log("Screen wake lock released");
+      } catch (err) {
+        // ignore errors on cleanup
+      }
+    };
+
+    keepScreenAwake();
+
+    // Cleanup function: runs when component unmounts or user navigates away
+    return () => {
+      allowScreenSleep();
+    };
+  }, []);
 
   useEffect(() => {
     setWaveHeight(screenHeight * 0.35);
@@ -395,6 +423,7 @@ export default function EditAudioPage() {
             value={currTime}
             onChange={handleSlideDrag}
             ref={timeSliderRef}
+            className="timeline-slider"
           />
 
           <div className="flex flex-row justify-around my-5">
