@@ -77,7 +77,7 @@ export default function EditAudioPage() {
   }, []);
 
   useEffect(() => {
-    setWaveHeight(screenHeight * 0.35);
+    setWaveHeight(screenHeight * 0.4);
   }, [screenHeight]);
 
   const timeline = useMemo(
@@ -283,13 +283,16 @@ export default function EditAudioPage() {
     });
   }
 
-  const displayRegion = useCallback((region) => {
-    regions.clearRegions();
-    regions.addRegion({
-      ...region,
-    });
-    wavesurfer.setTime(region.start);
-  }, []);
+  const displayRegion = useCallback(
+    (region) => {
+      regions.clearRegions();
+      regions.addRegion({
+        ...region,
+      });
+      wavesurfer.setTime(region.start);
+    },
+    [wavesurfer]
+  );
 
   useEffect(() => {
     dispatch({ type: "set_displayRegionFct", displayRegion: displayRegion });
@@ -391,7 +394,7 @@ export default function EditAudioPage() {
           )}
         >
           <Header title={decodeHtmlEntities(video.snippet.title)} />
-          <div className="">
+          <div className={`min-h-[${waveHeight}]`}>
             <WavesurferPlayer
               height={waveHeight}
               waveColor={getCssVar("--sub-alt-color")}
@@ -426,7 +429,7 @@ export default function EditAudioPage() {
             className="timeline-slider"
           />
 
-          <div className="flex flex-row justify-around my-5">
+          <div className="flex flex-row justify-around">
             <button
               onClick={handleLoopModeChange}
               className={clsx(
@@ -445,7 +448,7 @@ export default function EditAudioPage() {
             </button>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center pt-4">
             {isPlaying ? (
               <FaPauseCircle
                 size={55}

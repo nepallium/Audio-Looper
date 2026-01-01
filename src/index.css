@@ -4,7 +4,7 @@
 @layer base {
   :root {
     font-family: "Inter", sans-serif; /* Slider variables */
-    --slider-thumb-size: 24px;
+    --slider-thumb-size: 22px;
     --slider-track-height: 8px; /* Colors */
     --slider-fill: #88c0d0;
     --slider-bg: #eceff4;
@@ -22,8 +22,11 @@
   @apply bg-surface-100 min-h-screen;
 }
 .header {
-  @apply text-center bg-surface-200 p-6 pl-8 text-2xl font-semibold tracking-wide border-b-4 border-surface-300 text-balance;
-  padding-top: calc(env(safe-area-inset-top) + 1rem);
+  @apply text-center bg-surface-200 
+  font-semibold tracking-wide border-b-4 border-surface-300 text-balance
+  py-2 px-8 text-lg
+  md:py-4 md:text-xl;
+  padding-top: calc(env(safe-area-inset-top) + 0.5rem);
 }
 .regular-button {
   @apply px-6 py-2 rounded-md font-semibold bg-surface-200 text-base-light;

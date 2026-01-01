@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Turn as Hamburger } from "hamburger-react";
 import { IoIosSearch } from "react-icons/io";
 import { CiBookmarkCheck } from "react-icons/ci";
+import { MdOutlineAudiotrack } from "react-icons/md";
 import { useNavigate, useLocation } from "react-router";
 
 export default function BurgerMenu() {
@@ -48,6 +49,16 @@ export default function BurgerMenu() {
           >
             <CiBookmarkCheck />
             <p className="text-lg">Saved Audios</p>
+          </li>
+          <li
+            className="flex items-center gap-2"
+            onClick={() => {
+              setIsOpen(false);
+              navigate("/audio-editor");
+            }}
+          >
+            <MdOutlineAudiotrack />
+            <p className="text-lg">Audio Editor</p>
           </li>
         </ul>
       </nav>

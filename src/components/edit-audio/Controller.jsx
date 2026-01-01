@@ -29,7 +29,12 @@ function ControllerInner() {
       if (location.state) {
         ({ videoId, video } = location.state);
       } else {
-        ({ id: videoId, video } = await loadTmpAudioFromDB());
+        try {
+          ({ id: videoId, video } = await loadTmpAudioFromDB());
+        } catch (e) {
+          setIsNoAudio(true);
+          return;
+        }
       }
 
       const { blobObj } = await loadAudioFromDB(videoId);
