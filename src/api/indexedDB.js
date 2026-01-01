@@ -1,3 +1,5 @@
+import decodeHtmlEntities from "../utils/decodeHtmlEntities";
+
 export function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open("audioLoops", 1);
@@ -55,7 +57,7 @@ export async function replaceTmpAudio(video, blob) {
     const putRequest = store.put({
       id: video.id.videoId,
       isTmp: 1,
-      name: video.snippet.title,
+      name: decodeHtmlEntities(video.snippet.title),
       video: video,
       blobObj: blob,
       regions: [],
