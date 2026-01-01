@@ -18,7 +18,7 @@ class SoundTouchWorklet extends AudioWorkletProcessor {
     super();
     this.bufferSize = 512;
     this._samples = new Float32Array(this.bufferSize * 2);
-    this._pipe = new SoundTouch();
+    this._pipe = new SoundTouch(sampleRate);
   }
 
   process(inputs, outputs, parameters) {
