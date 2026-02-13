@@ -25,6 +25,7 @@ export default function LoopsList({ setIsModalOpen }) {
             key={region.id}
             setIsModalOpen={setIsModalOpen}
             region={region}
+            setRegions={setRegions}
           />
         );
       });

@@ -161,7 +161,7 @@ export async function deleteOneLoop(key, region) {
   }
 
   const regions = Array.isArray(audioObj.regions) ? audioObj.regions : [];
-  const newRegions = regions.filter((r) => r !== region);
+  const newRegions = regions.filter((r) => r.id !== region.id);
 
   const updated = { ...audioObj, regions: newRegions };
 

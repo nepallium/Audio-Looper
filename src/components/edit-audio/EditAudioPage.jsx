@@ -9,7 +9,7 @@ import getCssVar from "../../utils/getCssVar.js";
 import { SyncLoader } from "react-spinners";
 import isMobileDevice from "../../utils/isMobileDevice.js";
 import decodeHtmlEntities from "../../utils/decodeHtmlEntities.js";
-import { saveLoops } from "../../api/indexedDB.js";
+import { deleteOneLoop, saveLoops } from "../../api/indexedDB.js";
 import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
 import InfoBanner from "../InfoBanner.jsx";
 import { getLoopRegions } from "../../api/indexedDB.js";
@@ -325,6 +325,22 @@ export default function EditAudioPage() {
     dispatch({ type: "set_displayRegionFct", displayRegion: displayRegion });
   }, [displayRegion]);
 
+  const deleteOneRegion = useCallback(
+    (region) => {
+      deleteOneLoop(video.id.videoId, serializeRegion(region));
+
+      // regions.clearRegions();
+    },
+    [video.id.videoId, deleteOneLoop],
+  );
+
+  useEffect(() => {
+    dispatch({
+      type: "set_deleteOneRegionFct",
+      deleteOneRegion,
+    });
+  }, [deleteOneRegion]);
+
   function handleLoopModeChange(e) {
     const newMode = !loopMode;
     setLoopMode(newMode);
@@ -368,20 +384,10 @@ export default function EditAudioPage() {
   };
 
   async function onSave() {
-    let serializedRegion = null;
+    let serializedRegion;
     if (regions.getRegions().length > 0) {
       const r = regions.getRegions().at(0);
-      serializedRegion = {
-        id: r.id,
-        name: loopName,
-        start: r.start,
-        end: r.end,
-        color: r.color,
-        drag: r.drag,
-        resize: r.resize,
-        resizeStart: r.resizeStart,
-        resizeEnd: r.resizeEnd,
-      };
+      serializedRegion = serializeRegion(r);
     }
 
     const ok = await saveLoops(video.id.videoId, serializedRegion);
@@ -398,6 +404,24 @@ export default function EditAudioPage() {
         trigger: b.trigger + 1,
       }));
     }
+  }
+
+  function serializeRegion(r) {
+    if (r) {
+      return {
+        id: r.id,
+        name: loopName,
+        start: r.start,
+        end: r.end,
+        color: r.color,
+        drag: r.drag,
+        resize: r.resize,
+        resizeStart: r.resizeStart,
+        resizeEnd: r.resizeEnd,
+      };
+    }
+
+    return null;
   }
 
   return (

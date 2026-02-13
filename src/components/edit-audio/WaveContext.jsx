@@ -45,6 +45,13 @@ function waveReducer(wave, action) {
       };
     }
 
+    case "set_deleteOneRegionFct": {
+      return {
+        ...wave,
+        deleteOneRegion: action.deleteOneRegion,
+      };
+    }
+
     default: {
       throw Error("unknown action in WaveContext: " + action.type);
     }
