@@ -16,6 +16,7 @@ import { getLoopRegions } from "../../api/indexedDB.js";
 import Header from "../Header.jsx";
 import useScreenHeight from "../../hooks/useScreenHeight.js";
 import { KeepAwake } from "@capacitor-community/keep-awake";
+import { IoIosFastforward } from "react-icons/io";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -92,7 +93,7 @@ export default function EditAudioPage() {
           color: getCssVar("--main-color"),
         },
       }),
-    []
+    [],
   );
 
   const regions = useMemo(() => RegionsPlugin.create(), []);
@@ -176,14 +177,13 @@ export default function EditAudioPage() {
     slider.value = currentTime;
     slider.style.setProperty(
       "--value",
-      ((currentTime / duration) * 100).toFixed(4) + "%"
+      ((currentTime / duration) * 100).toFixed(4) + "%",
     );
   };
 
   const handlePlayPause = () => {
     if (!wavesurfer) return;
 
-    const currRegion = regions.regions.at(-1);
     setIsPlaying((prev) => !prev);
 
     wavesurfer.playPause();
@@ -191,12 +191,37 @@ export default function EditAudioPage() {
     updateProgress();
   };
 
+  const handleRewind = (e) => {
+    const currRegion = regions.regions.at(-1);
+    let time;
+    if (!currRegion) {
+      time = 0;
+    } else {
+      time = currRegion.start;
+    }
+    wavesurfer.setTime(time);
+    setCurrTime(time);
+  };
+
+  const handleFastForward = (e) => {
+    const currRegion = regions.regions.at(-1);
+
+    let time;
+    if (!currRegion) {
+      time = wavesurfer.getDuration();
+    } else {
+      time = currRegion.end;
+    }
+    wavesurfer.setTime(time);
+    setCurrTime(time);
+  };
+
   const handleWsClick = (e) => {
     const time = wavesurfer.getCurrentTime();
     setCurrTime(time);
     timeSliderRef.current.style.setProperty(
       "--value",
-      ((time / wavesurfer.getDuration()) * 100).toFixed(4) + "%"
+      ((time / wavesurfer.getDuration()) * 100).toFixed(4) + "%",
     );
   };
 
@@ -206,7 +231,7 @@ export default function EditAudioPage() {
     setCurrTime(time);
     e.target.style.setProperty(
       "--value",
-      ((time / wavesurfer.getDuration()) * 100).toFixed(4) + "%"
+      ((time / wavesurfer.getDuration()) * 100).toFixed(4) + "%",
     );
   };
 
@@ -291,7 +316,7 @@ export default function EditAudioPage() {
       });
       wavesurfer.setTime(region.start);
     },
-    [wavesurfer]
+    [wavesurfer],
   );
 
   useEffect(() => {
@@ -390,7 +415,7 @@ export default function EditAudioPage() {
           ref={wsContainerRef}
           className={clsx(
             "touch-none select-none overflow-hidden",
-            !isWaveReady && "opacity-0 pointer-events-none absolute"
+            !isWaveReady && "opacity-0 pointer-events-none absolute",
           )}
         >
           <Header title={decodeHtmlEntities(video.snippet.title)} />
@@ -434,7 +459,7 @@ export default function EditAudioPage() {
               onClick={handleLoopModeChange}
               className={clsx(
                 "regular-button",
-                loopMode && "bg-primary-100 text-base-dark"
+                loopMode && "bg-primary-100 text-base-dark",
               )}
             >{`Loop`}</button>
             <button className="regular-button" onClick={markStart}>
@@ -448,7 +473,12 @@ export default function EditAudioPage() {
             </button>
           </div>
 
-          <div className="flex justify-center pt-4">
+          <div className="flex gap-10 justify-center items-center pt-4">
+            <IoIosFastforward
+              className="rotate-180"
+              size={40}
+              onClick={handleRewind}
+            />
             {isPlaying ? (
               <FaPauseCircle
                 size={55}
@@ -464,6 +494,7 @@ export default function EditAudioPage() {
                 className="cursor-pointer"
               />
             )}
+            <IoIosFastforward size={40} onClick={handleFastForward} />
           </div>
           <Controls wavesurfer={wavesurfer} />
         </>
