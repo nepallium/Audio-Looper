@@ -144,6 +144,36 @@ export async function saveLoops(key, region) {
   return true;
 }
 
+export async function deleteOneLoop(key, region) {
+  const db = await openDB();
+  const tx = db.transaction("audios", "readwrite");
+  const store = tx.objectStore("audios");
+
+  const audioObj = await new Promise((resolve, reject) => {
+    const request = store.get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  if (!audioObj) {
+    // nothing to delete
+    return null;
+  }
+
+  const regions = Array.isArray(audioObj.regions) ? audioObj.regions : [];
+  const newRegions = regions.filter((r) => r !== region);
+
+  const updated = { ...audioObj, regions: newRegions };
+
+  const result = await new Promise((resolve, reject) => {
+    const request = store.put(updated);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  return result;
+}
+
 export async function getAudios() {
   const db = await openDB();
   const tx = db.transaction("audios", "readonly");
@@ -210,7 +240,7 @@ export async function getAudiosByName(searchTerm) {
 
   const lowerSearch = searchTerm.toLowerCase().trim();
   return allAudios.filter(
-    (audio) => audio.name.toLowerCase().includes(lowerSearch) && !audio.isTmp
+    (audio) => audio.name.toLowerCase().includes(lowerSearch) && !audio.isTmp,
   );
 }
 
