@@ -315,6 +315,8 @@ export default function EditAudioPage() {
         ...region,
       });
       wavesurfer.setTime(region.start);
+      setCurrTime(region.start);
+      setLoopMode(true);
     },
     [wavesurfer],
   );
