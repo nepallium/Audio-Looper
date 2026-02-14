@@ -15,6 +15,7 @@ public/audios
 .env
 dev-tmp
 certs
+android
 
 # Editor directories and files
 .vscode/*

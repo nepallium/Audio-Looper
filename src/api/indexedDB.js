@@ -249,9 +249,9 @@ export async function deleteAudio(key) {
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
 
-  await new Promise((resolve, reject) => {
+  const result = await new Promise((resolve, reject) => {
     const req = store.delete(key);
-    req.onsuccess = () => resolve();
+    req.onsuccess = () => resolve(true);
     req.onerror = () => reject(req.error);
   });
 
@@ -262,11 +262,11 @@ export async function clearAudios() {
   const db = await openDB();
   const tx = db.transaction("audios", "readwrite");
   const store = tx.objectStore("audios");
-  await new Promise((resolve, reject) => {
+  const result = await new Promise((resolve, reject) => {
     const req = store.clear();
-    req.onsuccess = () => resolve();
+    req.onsuccess = () => resolve(true);
     req.onerror = () => reject(req.error);
   });
 
-  return true;
+  return result;
 }

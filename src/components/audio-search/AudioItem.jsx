@@ -24,7 +24,7 @@ export default function AudioItem({ id, name, video, regions, openModal }) {
         <p className="font-semibold text-base-dark text-lg line-clamp-2">
           {name}
         </p>
-        <div className="flex justify-between items-center z-50">
+        <div className="flex justify-between items-center z-10">
           <p className="text-base-light font-[500]">{`${regions.length} ${
             regions.length === 1 ? "loop" : "loops"
           }`}</p>
