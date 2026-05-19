@@ -1,9 +1,11 @@
 import { spawn } from "child_process";
+import path from "path";
+import fs from "fs";
 
 export function getYtAudio(req, res) {
   const videoId = req.params.videoId;
   if (!videoId) {
-    return res.status(400).send("Missing videoId");
+    return res.status(400).send("Missing videoId parameter");
   }
 
   const url = `https://www.youtube.com/watch?v=${videoId}`;
@@ -31,7 +33,9 @@ export function getYtAudio(req, res) {
     ytProcess.on("error", (err) => {
       console.error("yt-dlp error:", err);
       if (!res.headersSent) {
-        res.status(500).send("Internal system error");
+        res
+          .status(500)
+          .send("YTDLP: System failed to establish audio stream source");
       }
     });
 
@@ -44,7 +48,7 @@ export function getYtAudio(req, res) {
   } catch (err) {
     console.error("Error streaming audio:", err);
     if (!res.headersSent) {
-      res.status(500).send("Internal system error");
+      res.status(500).send("YTDLP: Internal server ingestion error");
     }
   }
 }

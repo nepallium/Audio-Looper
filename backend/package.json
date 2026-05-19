@@ -11,7 +11,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "better-queue": "^3.8.12",
     "cors": "^2.8.6",
+    "dockerode": "^5.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
   }
