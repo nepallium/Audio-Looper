@@ -1,272 +1,192 @@
+import Dexie from "dexie";
 import decodeHtmlEntities from "../utils/decodeHtmlEntities.js";
 
-export function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open("audioLoops", 1);
+// Database definition
 
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      let store;
-      if (!db.objectStoreNames.contains("audios")) {
-        store = db.createObjectStore("audios", { keyPath: "id" });
-      } else {
-        store = req.transaction.objectStore("audios");
-      }
+export const db = new Dexie("audioLoops");
 
-      // Create index on isTmp if it doesn't exist (only for new upgrades)
-      if (!store.indexNames.contains("isTmp")) {
-        store.createIndex("by_isTmp", "isTmp", { unique: false });
-      }
-    };
+db.version(1).stores({
+  // Only indexed fields go here; all other fields are stored automatically.
+  audios: "id, isTmp, name",
+});
 
-    req.onsuccess = () => resolve(req.result);
+// Helpers
 
-    req.onerror = (event) => {
-      console.log("An error occured with IndexedDB: ", event);
-      reject(req.error);
-    };
-  });
+/**
+ * Builds a clean audio record ready for storage.
+ * @param {object} video  - YouTube video object.
+ * @param {Blob}   blob   - Audio blob.
+ * @param {number} isTmp  - 1 = temporary, 0 = saved.
+ */
+function buildAudioRecord(video, blob, isTmp = 1) {
+  return {
+    id: video.id.videoId,
+    isTmp,
+    name: decodeHtmlEntities(video.snippet.title),
+    video,
+    blobObj: blob,
+    regions: [],
+  };
 }
 
+// Audio CRUD
+
+/**
+ * Replaces the current temporary audio with a new one.
+ * Any existing record flagged as temporary is deleted first.
+ */
 export async function replaceTmpAudio(video, blob) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readwrite");
-  const store = tx.objectStore("audios");
-
-  const index = store.index("by_isTmp");
-
-  // Delete all tmp audios
-  await new Promise((resolve, reject) => {
-    const request = index.openCursor(IDBKeyRange.only(1));
-
-    request.onsuccess = (event) => {
-      const cursor = event.target.result;
-      if (cursor) {
-        cursor.delete(); // Delete this tmp entry
-        cursor.continue(); // Check if there are more (though there should only be one)
-      } else {
-        resolve();
-      }
-    };
-
-    request.onerror = () => reject(request.error);
-  });
-
-  // Add the new tmp audio
-  await new Promise((resolve, reject) => {
-    const putRequest = store.put({
-      id: video.id.videoId,
-      isTmp: 1,
-      name: decodeHtmlEntities(video.snippet.title),
-      video: video,
-      blobObj: blob,
-      regions: [],
-    });
-
-    putRequest.onsuccess = () => resolve();
-    putRequest.onerror = () => reject(putRequest.error);
-  });
-
+  await db.audios.where("isTmp").equals(1).delete();
+  await db.audios.put(buildAudioRecord(video, blob, 1));
   return true;
 }
 
+/**
+ * Loads the current temporary audio, or null if none exists.
+ */
 export async function loadTmpAudioFromDB() {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readonly");
-  const store = tx.objectStore("audios");
-
-  const result = await new Promise((resolve, reject) => {
-    const req = store.index("by_isTmp").get(1);
-
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-
-  return result;
+  const record = (await db.audios.where("isTmp").equals(1).first()) ?? null;
+  return record;
 }
 
+/**
+ * Loads a saved audio by its ID, or null if not found.
+ * @param {string} key - Audio ID.
+ */
 export async function loadAudioFromDB(key) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readonly");
-  const result = await new Promise((resolve, reject) => {
-    const req = tx.objectStore("audios").get(key);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-
-  return result;
+  const record = (await db.audios.get(key)) ?? null;
+  return record;
 }
 
+/**
+ * Returns true if an audio with the given ID exists in the database.
+ * @param {string} key - Audio ID.
+ */
 export async function isAudioIdExists(key) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readonly");
-  const result = await new Promise((resolve, reject) => {
-    const req = tx.objectStore("audios").count(key);
-    req.onsuccess = (e) => {
-      const count = e.target.result;
-      resolve(count > 0);
-    };
-    req.onerror = () => reject(req.error);
-  });
-
-  return result;
+  const count = await db.audios.where("id").equals(key).count();
+  return count > 0;
 }
 
-export async function saveLoops(key, region) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readwrite");
-  const store = tx.objectStore("audios");
+/**
+ * Returns all non-temporary audios, optionally filtered by name.
+ * @param {string} [searchTerm] - Case-insensitive substring to match against name.
+ */
+export async function getAudiosByName(searchTerm) {
+  const term = searchTerm?.trim().toLowerCase() ?? "";
 
-  const existing = await new Promise((resolve, reject) => {
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  const audios = term
+    ? await db.audios
+        .filter(
+          (audio) => !audio.isTmp && audio.name.toLowerCase().includes(term),
+        )
+        .toArray()
+    : await db.audios.where("isTmp").equals(0).toArray();
 
-  // console.log(existing);
-  if (existing && existing.isTmp) {
-    existing.isTmp = 0;
-  }
-  if (region) {
-    const isRegionUnique = !existing.regions.some((r) => r.id === region.id);
-    if (!isRegionUnique) {
-      return false; // region already exists
-    }
-    existing.regions.push(region);
-  }
+  return audios;
+}
 
-  // store loop or new audio in database
-  await new Promise((resolve, reject) => {
-    const request = store.put(existing);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+/**
+ * Returns all audio records (including temporary ones).
+ */
+export async function getAudios() {
+  return db.audios.toArray();
+}
+
+/**
+ * Permanently deletes an audio record by ID.
+ * @param {string} key - Audio ID.
+ */
+export async function deleteAudio(key) {
+  await db.audios.delete(key);
   return true;
 }
 
-export async function deleteOneLoop(key, region) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readwrite");
-  const store = tx.objectStore("audios");
-
-  const audioObj = await new Promise((resolve, reject) => {
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-  if (!audioObj) {
-    // nothing to delete
-    return null;
-  }
-
-  const regions = Array.isArray(audioObj.regions) ? audioObj.regions : [];
-  const newRegions = regions.filter((r) => r.id !== region.id);
-
-  const updated = { ...audioObj, regions: newRegions };
-
-  const result = await new Promise((resolve, reject) => {
-    const request = store.put(updated);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-  return result;
-}
-
-export async function getAudios() {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readonly");
-  const store = tx.objectStore("audios");
-  const result = await new Promise((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = (event) => {
-      // The result of getAll() is the array of all objects in the store
-      const allElements = event.target.result;
-      // console.log(allElements);
-      resolve(allElements);
-    };
-
-    request.onerror = (event) => reject(event.target.error);
-  });
-
-  // console.log(result);
-  return result;
-}
-
-export async function getLoopRegions(key) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readonly");
-  const store = tx.objectStore("audios");
-  const result = await new Promise((resolve, reject) => {
-    const request = store.get(key);
-    request.onsuccess = (e) => resolve(request.result);
-    request.onerror = (e) => reject(request.error);
-  });
-  tx.done;
-  // console.log(result);
-  return result.regions ? result.regions : [];
-}
-
-export function getStorageUsage() {
-  // Check storage quota and usage
-  if (navigator.storage && navigator.storage.estimate) {
-    navigator.storage.estimate().then((estimate) => {
-      const usedMB = (estimate.usage / (1024 * 1024)).toFixed(2);
-      const quotaMB = (estimate.quota / (1024 * 1024)).toFixed(2);
-      const percentUsed = ((estimate.usage / estimate.quota) * 100).toFixed(2);
-
-      console.log(`Used: ${usedMB} MB`);
-      console.log(`Quota: ${quotaMB} MB`);
-      console.log(`Percent used: ${percentUsed}%`);
-    });
-  }
-}
-
-export async function getAudiosByName(searchTerm) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readonly");
-  const store = tx.objectStore("audios");
-
-  const allAudios = await new Promise((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-  if (!searchTerm || searchTerm.trim() === "") {
-    return allAudios.filter((audio) => !audio.isTmp); // Return all if no search term
-  }
-
-  const lowerSearch = searchTerm.toLowerCase().trim();
-  return allAudios.filter(
-    (audio) => audio.name.toLowerCase().includes(lowerSearch) && !audio.isTmp,
-  );
-}
-
-export async function deleteAudio(key) {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readwrite");
-  const store = tx.objectStore("audios");
-
-  const result = await new Promise((resolve, reject) => {
-    const req = store.delete(key);
-    req.onsuccess = () => resolve(true);
-    req.onerror = () => reject(req.error);
-  });
-
-  return result;
-}
-
+/**
+ * Deletes every audio record in the database.
+ */
 export async function clearAudios() {
-  const db = await openDB();
-  const tx = db.transaction("audios", "readwrite");
-  const store = tx.objectStore("audios");
-  const result = await new Promise((resolve, reject) => {
-    const req = store.clear();
-    req.onsuccess = () => resolve(true);
-    req.onerror = () => reject(req.error);
-  });
+  await db.audios.clear();
+  return true;
+}
 
-  return result;
+// Loop / region management
+
+/**
+ * Promotes a temporary audio to saved, optionally appending a new region.
+ * Returns false if the region already exists; true otherwise.
+ *
+ * @param {string}  key    - Audio ID.
+ * @param {object}  [region] - Region to append (optional).
+ */
+export async function saveLoops(key, region) {
+  return db.transaction("rw", db.audios, async () => {
+    const audio = await db.audios.get(key);
+    if (!audio)
+      throw new Error(`[DB] Cannot save loops — audio "${key}" not found.`);
+
+    if (audio.isTmp) audio.isTmp = 0;
+
+    if (region) {
+      const isDuplicate = audio.regions.some((r) => r.id === region.id);
+      if (isDuplicate) {
+        return false;
+      }
+      audio.regions.push(region);
+    }
+
+    await db.audios.put(audio);
+    return true;
+  });
+}
+
+/**
+ * Removes a single region from an audio record.
+ * Returns the updated record, or null if the audio was not found.
+ *
+ * @param {string} key    - Audio ID.
+ * @param {object} region - Region to remove (matched by region.id).
+ */
+export async function deleteOneLoop(key, region) {
+  return db.transaction("rw", db.audios, async () => {
+    const audio = await db.audios.get(key);
+    if (!audio) {
+      return null;
+    }
+
+    audio.regions = audio.regions.filter((r) => r.id !== region.id);
+    await db.audios.put(audio);
+    return audio;
+  });
+}
+
+/**
+ * Returns all regions for a given audio ID.
+ * @param {string} key - Audio ID.
+ */
+export async function getLoopRegions(key) {
+  const audio = await db.audios.get(key);
+  return audio?.regions ?? [];
+}
+
+// Diagnostics
+
+/**
+ * Logs current IndexedDB storage usage to the console.
+ */
+export async function getStorageUsage() {
+  if (!navigator.storage?.estimate) {
+    console.warn(
+      "[DB] Storage estimation API is not available in this browser.",
+    );
+    return;
+  }
+
+  const { usage, quota } = await navigator.storage.estimate();
+  const usedMB = (usage / 1024 / 1024).toFixed(2);
+  const quotaMB = (quota / 1024 / 1024).toFixed(2);
+  const percentUsed = ((usage / quota) * 100).toFixed(2);
+
+  console.info(
+    `[DB] Storage — used: ${usedMB} MB / ${quotaMB} MB (${percentUsed}%)`,
+  );
 }
