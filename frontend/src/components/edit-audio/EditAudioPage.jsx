@@ -42,11 +42,12 @@ export default function EditAudioPage() {
     error: false,
     trigger: 0,
   });
-  const [isMixerOpen, setIsMixerOpen] = useState(false);
+  const [activeView, setActiveView] = useState("waveform"); // "waveform" | "mixer"
   const {
     status,
     error: stemsError,
     triggerStemSplit,
+    stems,
   } = useStems(video?.id?.videoId);
 
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
@@ -445,69 +446,100 @@ export default function EditAudioPage() {
 
       {audioEl && (
         <>
-          <div
-            id="waveform"
-            ref={wsContainerRef}
-            className={clsx(
-              "touch-none select-none overflow-hidden relative",
-              !isWaveReady && "opacity-0 pointer-events-none absolute",
-            )}
-          >
+          <div className="relative w-full overflow-hidden">
             <Header title={decodeHtmlEntities(video.snippet.title)} />
-            <div className={`min-h-[${waveHeight}]`}>
-              <WavesurferPlayer
-                height={waveHeight}
-                waveColor={getCssVar("--sub-alt-color")}
-                backend="WebAudio"
-                media={audioEl}
-                responsive={!isMobileDevice()}
-                normalize={isMobileDevice()}
-                progressColor={getCssVar("--text-color")}
-                minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
-                pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
-                onReady={handleReady}
-                onClick={handleWsClick}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                plugins={wsPlugins}
-              />
-              <button
-                onClick={() => setIsMixerOpen(true)}
+
+            {/* THE CANVAS CONTAINER */}
+            <div className={`relative min-h-[${waveHeight}] w-full`}>
+              {/* VIEW A: THE WAVEFORM (Always in-flow to hold height, just invisible when mixer is open) */}
+              <div
+                id="waveform-canvas"
+                ref={wsContainerRef}
                 className={clsx(
-                  "absolute bottom-10 right-3 p-2 rounded-md flex gap-2 items-center z-10 text-sm font-medium transition-colors shadow-md",
-                  status === "done" &&
-                    "bg-emerald-600 text-white hover:bg-emerald-700",
-                  status === "failed" &&
-                    "bg-rose-600 text-white hover:bg-rose-700",
-                  status !== "done" &&
-                    status !== "failed" &&
-                    "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
-                  (status === "downloading" ||
-                    status === "processing" ||
-                    status === "hydrating") &&
-                    "animate-pulse",
+                  "w-full transition-opacity duration-200",
+                  activeView === "mixer"
+                    ? "opacity-0 pointer-events-none"
+                    : "opacity-100",
+                  !isWaveReady &&
+                    activeView === "waveform" &&
+                    "opacity-0 pointer-events-none absolute",
                 )}
               >
-                <RxMixerVertical
-                  className={clsx(status === "processing" && "animate-spin")}
+                <WavesurferPlayer
+                  height={waveHeight}
+                  waveColor={getCssVar("--sub-alt-color")}
+                  backend="WebAudio"
+                  media={audioEl}
+                  responsive={!isMobileDevice()}
+                  normalize={isMobileDevice()}
+                  progressColor={getCssVar("--text-color")}
+                  minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
+                  pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
+                  onReady={handleReady}
+                  onClick={handleWsClick}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  plugins={wsPlugins}
                 />
-                {status === "idle" && "Stems"}
-                {status === "downloading" && "Downloading..."}
-                {status === "processing" && "AI Processing..."}
-                {status === "hydrating" && "Caching..."}
-                {status === "done" && "Mixer"}
-                {status === "failed" && "Failed"}
-              </button>
+              </div>
+
+              {/* VIEW B: THE MIXER PANEL (Sits perfectly over the ghost waveform) */}
+              {activeView === "mixer" && (
+                <div className="absolute inset-0 z-20 bg-neutral-900 overflow-y-auto">
+                  <Mixer
+                    status={status}
+                    error={stemsError}
+                    stems={stems}
+                    onTriggerSplit={triggerStemSplit}
+                    onBack={() => setActiveView("waveform")}
+                  />
+                </div>
+              )}
             </div>
+
+            {/* THE FLOATING TOGGLE BUTTON */}
+            <button
+              onClick={() => {
+                // Toggle logic: If done, swap views. If not done, it acts as the trigger.
+                if (status === "done") {
+                  setActiveView((prev) =>
+                    prev === "waveform" ? "mixer" : "waveform",
+                  );
+                } else if (status === "idle" || status === "failed") {
+                  setActiveView("mixer"); // Open the view to show the 'Generate' or 'Error' screen
+                }
+              }}
+              className={clsx(
+                "absolute bottom-4 right-4 p-2 rounded-md flex gap-2 items-center z-30 text-sm font-medium shadow-md transition-all",
+                status === "done" &&
+                  activeView === "waveform" &&
+                  "bg-emerald-600 text-white hover:bg-emerald-700",
+                status === "done" &&
+                  activeView === "mixer" &&
+                  "bg-neutral-700 text-white hover:bg-neutral-600", // Dimmer when already inside
+                status === "failed" &&
+                  "bg-rose-600 text-white hover:bg-rose-700",
+                status !== "done" &&
+                  status !== "failed" &&
+                  "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
+                (status === "downloading" ||
+                  status === "processing" ||
+                  status === "hydrating") &&
+                  "animate-pulse",
+              )}
+            >
+              <RxMixerVertical
+                className={clsx(status === "processing" && "animate-spin")}
+              />
+              {status === "idle" && "Stems"}
+              {status === "downloading" && "Downloading..."}
+              {status === "processing" && "AI Processing..."}
+              {status === "hydrating" && "Caching..."}
+              {status === "done" && activeView === "waveform" && "Mixer"}
+              {status === "done" && activeView === "mixer" && "Waveform"}
+              {status === "failed" && "Failed"}
+            </button>
           </div>
-          {isMixerOpen && (
-            <Mixer
-              status={status}
-              error={stemsError}
-              onTriggerSplit={triggerStemSplit}
-              onClose={() => setIsMixerOpen(false)}
-            />
-          )}
         </>
       )}
 

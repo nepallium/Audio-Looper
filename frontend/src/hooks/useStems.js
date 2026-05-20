@@ -4,6 +4,7 @@ import { cacheAudioStems, loadAudioFromDB } from "@src/db/indexedDB";
 export function useStems(videoId) {
   const [status, setStatus] = useState("idle"); // idle, downloading, processing, hydrating, done, failed
   const [error, setError] = useState(null);
+  const [stems, setStems] = useState(null);
 
   const triggerStemSplit = async () => {
     if (!videoId) return;
@@ -93,6 +94,7 @@ export function useStems(videoId) {
 
           // now we're actually done
           setStatus("done");
+          setStems(updatedAudioRecord.stems);
         } catch (error) {
           console.error("Failed to download stems to frontend", error);
           setStatus("failed");
@@ -122,5 +124,5 @@ export function useStems(videoId) {
     }
   }, [status, updateStatus]);
 
-  return { status, error, triggerStemSplit, updateStatus };
+  return { status, error, triggerStemSplit, updateStatus, stems };
 }

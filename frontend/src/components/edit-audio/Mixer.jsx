@@ -1,107 +1,196 @@
-import { IoClose } from "react-icons/io5";
+import { useEffect, useState, useRef } from "react";
+import { IoArrowBack } from "react-icons/io5";
+import clsx from "clsx";
 
-export default function Mixer({ status, error, onTriggerSplit, onClose }) {
-  // Hardcoded for UI mapping right now
+export default function Mixer({
+  status,
+  error,
+  stems,
+  onTriggerSplit,
+  onBack,
+}) {
   const stemNames = ["vocals", "bass", "drums", "piano", "guitar", "other"];
+  const [isDecoding, setIsDecoding] = useState(false);
+  const [volumes, setVolumes] = useState({
+    vocals: 1,
+    bass: 1,
+    drums: 1,
+    piano: 1,
+    guitar: 1,
+    other: 1,
+  });
+
+  // Hardware references that don't trigger UI re-renders
+  const audioCtxRef = useRef(null);
+  const gainNodesRef = useRef({});
+  const audioBuffersRef = useRef({});
+
+  // 2. THE ENGINE LOGIC (Unpacking the files into memory)
+  useEffect(() => {
+    if (status !== "done" || !stems) return;
+
+    async function initializeAudioEngine() {
+      setIsDecoding(true);
+      try {
+        const AudioContextClass =
+          window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioContextClass();
+        audioCtxRef.current = ctx;
+
+        await Promise.all(
+          Object.keys(stems).map(async (name) => {
+            const arrayBuffer = await stems[name].arrayBuffer();
+            const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
+            audioBuffersRef.current[name] = decodedBuffer;
+
+            const gainNode = ctx.createGain();
+            gainNode.gain.setValueAtTime(volumes[name], ctx.currentTime);
+            gainNode.connect(ctx.destination);
+            gainNodesRef.current[name] = gainNode;
+          }),
+        );
+      } catch (err) {
+        console.error("Critical error building audio engine:", err);
+      } finally {
+        setIsDecoding(false);
+      }
+    }
+
+    initializeAudioEngine();
+
+    return () => {
+      if (audioCtxRef.current) audioCtxRef.current.close();
+    };
+  }, [status, stems]);
+
+  // 3. WIRING THE SLIDERS TO THE ENGINE
+  const handleVolumeChange = (name, val) => {
+    const volumeValue = parseFloat(val);
+    setVolumes((prev) => ({ ...prev, [name]: volumeValue }));
+
+    if (gainNodesRef.current[name] && audioCtxRef.current) {
+      gainNodesRef.current[name].gain.linearRampToValueAtTime(
+        volumeValue,
+        audioCtxRef.current.currentTime + 0.01, // Smooth transition, no popping
+      );
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-800 w-full max-w-xl rounded-xl p-6 relative flex flex-col shadow-2xl">
+    <div className="w-full h-full p-4 flex flex-col">
+      {/* HEADER: Back Button */}
+      <div className="flex items-center gap-3 mb-4">
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-neutral-400 hover:text-white transition-colors"
+          onClick={onBack}
+          className="p-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-md text-neutral-300 transition-colors"
         >
-          <IoClose size={24} />
+          <IoArrowBack size={18} />
         </button>
+        <h3 className="text-lg font-bold text-white">Audio Mixer</h3>
+      </div>
 
-        <h3 className="text-xl font-bold text-white mb-4">Audio Mixer</h3>
+      {/* STATE: IDLE */}
+      {status === "idle" && (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <p className="text-neutral-400 mb-4 text-sm max-w-sm">
+            Isolate instruments using the BS-Roformer neural network. This
+            process takes a few minutes.
+          </p>
+          <button
+            onClick={onTriggerSplit}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
+          >
+            Generate AI Stems
+          </button>
+        </div>
+      )}
 
-        {/* STATE: IDLE */}
-        {status === "idle" && (
-          <div className="text-center py-8">
-            <p className="text-neutral-400 mb-6 text-sm">
-              Isolate instruments using the BS-Roformer neural network. This
-              process takes a few minutes.
-            </p>
-            <button
-              onClick={onTriggerSplit}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-colors shadow-md"
-            >
-              Generate AI Stems
-            </button>
-          </div>
-        )}
+      {/* STATE: WORKING */}
+      {(status === "downloading" ||
+        status === "processing" ||
+        status === "hydrating") && (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-3" />
+          <p className="text-white font-medium text-sm mb-1">
+            {status === "downloading" && "Acquiring source..."}
+            {status === "processing" && "AI isolating layers..."}
+            {status === "hydrating" && "Caching tracks..."}
+          </p>
+          <p className="text-neutral-500 text-xs">
+            You can go back to the waveform while this runs.
+          </p>
+        </div>
+      )}
 
-        {/* STATE: WORKING (Downloading, Processing, Hydrating) */}
-        {(status === "downloading" ||
-          status === "processing" ||
-          status === "hydrating") && (
-          <div className="text-center py-10 flex flex-col items-center justify-center">
-            <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
-            <p className="text-white font-medium text-sm mb-2">
-              {status === "downloading" &&
-                "Acquiring high-fidelity source audio..."}
-              {status === "processing" && "AI isolating instrument layers..."}
-              {status === "hydrating" && "Caching tracks to local storage..."}
-            </p>
-            <p className="text-neutral-500 text-xs max-w-xs">
-              You can close this overlay and keep practicing. We'll finish
-              setting up the mixer in the background.
-            </p>
-          </div>
-        )}
+      {/* STATE: FAILED */}
+      {status === "failed" && (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <p className="text-rose-400 font-medium text-sm mb-1">
+            Extraction Aborted
+          </p>
+          <p className="text-neutral-400 text-xs mb-4 max-w-sm">
+            {error || "An unknown error occurred during generation."}
+          </p>
+          <button
+            onClick={onTriggerSplit}
+            className="bg-neutral-800 hover:bg-neutral-700 text-white text-xs py-2 px-4 rounded-md transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
 
-        {/* STATE: FAILED */}
-        {status === "failed" && (
-          <div className="text-center py-8">
-            <p className="text-rose-400 font-medium text-sm mb-2">
-              Extraction Aborted
-            </p>
-            <p className="text-neutral-400 text-xs mb-6 max-w-sm mx-auto">
-              {error || "An unknown error occurred during generation."}
-            </p>
-            <button
-              onClick={onTriggerSplit}
-              className="bg-neutral-800 hover:bg-neutral-700 text-white text-xs py-2 px-4 rounded-md transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
+      {/* STATE: DONE (The 3x2 Grid) */}
+      {status === "done" && (
+        <div className="flex-1 flex flex-col justify-center">
+          {isDecoding ? (
+            <div className="text-center">
+              <div className="w-6 h-6 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-xs text-neutral-400">
+                Booting audio engine...
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 pb-8">
+              {stemNames.map((name) => (
+                <div
+                  key={name}
+                  className="flex flex-col bg-neutral-950 p-3 rounded-lg border border-neutral-800/50"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-300">
+                      {name}
+                    </span>
+                    <button
+                      onClick={() =>
+                        handleVolumeChange(name, volumes[name] > 0 ? 0 : 1)
+                      }
+                      className={clsx(
+                        "text-[10px] font-bold px-2 py-0.5 rounded transition-colors",
+                        volumes[name] === 0
+                          ? "bg-rose-500/20 text-rose-400"
+                          : "bg-neutral-800 hover:bg-neutral-700 text-neutral-400",
+                      )}
+                    >
+                      {volumes[name] === 0 ? "MUTED" : "MUTE"}
+                    </button>
+                  </div>
 
-        {/* STATE: DONE (The Sliders) */}
-        {status === "done" && (
-          <div className="flex flex-col gap-3 py-2">
-            <p className="text-xs text-emerald-500 mb-2 font-medium">
-              Stems successfully loaded to local cache.
-            </p>
-
-            {stemNames.map((name) => (
-              <div
-                key={name}
-                className="flex items-center justify-between bg-neutral-950 p-3 rounded-lg border border-neutral-800/50"
-              >
-                <span className="text-sm font-medium capitalize text-neutral-300 w-20">
-                  {name}
-                </span>
-                <div className="flex items-center gap-4 flex-1">
                   <input
                     type="range"
                     min="0"
                     max="1"
                     step="0.01"
-                    defaultValue="1"
-                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    value={volumes[name]}
+                    onChange={(e) => handleVolumeChange(name, e.target.value)}
+                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
-                  <button className="text-xs font-semibold px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors">
-                    Mute
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
