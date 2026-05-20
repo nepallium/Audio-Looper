@@ -4,16 +4,13 @@ import * as stemsController from "../controllers/stemsController.js";
 
 const router = express.Router();
 
-router.get("/ytAudio/:videoId", ytController.getYtAudio);
+router.get("/audio/:videoId/yt", ytController.getYtAudio);
 
-router.get("/stems/:videoId", stemsController.processAudioStemSplit);
+// Generate the stems, stores on server disk temporarily
+router.post("/audio/:videoId/stems/split", stemsController.stemSplitAudio);
 
-import { jobStore } from "../controllers/stemsController.js";
+router.get("/audio/:videoId/stems/:stemName", stemsController.getStemFile);
 
-router.get("/stems/status/:videoId", (req, res) => {
-  const job = jobStore.get(req.params.videoId);
-  if (!job) return res.status(404).json({ status: "not_found" });
-  res.json(job);
-});
+router.get("/audio/:videoId/stems/status", stemsController.getJobStatus);
 
 export default router;
