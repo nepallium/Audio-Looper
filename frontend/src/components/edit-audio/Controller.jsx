@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import EditAudioPage from "./EditAudioPage";
-import { loadAudioFromDB, loadTmpAudioFromDB } from "@shared/db/indexedDB.js";
+import { loadAudioFromDB, loadTmpAudioFromDB } from "@src/db/indexedDB.js";
 import { useWaveContext, useWaveDispatch, WaveProvider } from "./WaveContext";
 
 export default function Controller() {

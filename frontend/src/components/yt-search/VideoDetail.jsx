@@ -3,7 +3,7 @@ import { BarLoader, SyncLoader } from "react-spinners";
 import getCssVar from "../../utils/getCssVar";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
-import { isAudioIdExists, replaceTmpAudio } from "@shared/db/indexedDB.js";
+import { isAudioIdExists, replaceTmpAudio } from "@src/db/indexedDB.js";
 
 const baseStyles =
   "rounded-lg bg-surface-200 shadow flex flex-col items-center w-full";
@@ -55,7 +55,7 @@ const VideoDetail = ({ video }) => {
       if (!isAudioSaved) {
         console.log("Starting analyze for video:", video.id.videoId);
         const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/ytAudio/${videoId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/audio/${videoId}/yt`,
           { signal: controller.signal },
         );
         if (controller.signal.aborted) return;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getLoopRegions } from "@shared/db/indexedDB.js";
+import { getLoopRegions } from "@src/db/indexedDB.js";
 import LoopCard from "./LoopCard";
 import { useWaveContext } from "../WaveContext";
 

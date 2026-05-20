@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { clearAudios, deleteAudio, getAudios } from "@shared/db/indexedDB.js";
+import { clearAudios, deleteAudio, getAudios } from "@src/db/indexedDB.js";
 import AudioList from "./AudioList";
 import SearchBar from "./SearchBar";
 import { SyncLoader } from "react-spinners";

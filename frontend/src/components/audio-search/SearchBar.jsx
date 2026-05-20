@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getAudiosByName } from "@shared/db/indexedDB.js";
+import { getAudiosByName } from "@src/db/indexedDB.js";
 import useDebounce from "../../hooks/useDebounce";
 
 export default function SearchBar({ setFilteredAudios }) {
