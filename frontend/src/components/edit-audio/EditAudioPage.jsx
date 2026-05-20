@@ -18,6 +18,8 @@ import useScreenHeight from "../../hooks/useScreenHeight.js";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { IoIosFastforward } from "react-icons/io";
 import { RxMixerVertical } from "react-icons/rx";
+import { useStems } from "@/src/hooks/useStems.js";
+import Mixer from "./Mixer.jsx";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -34,13 +36,18 @@ export default function EditAudioPage() {
   const [loopMode, setLoopMode] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
   const [minPxPerSec, setMinPxPerSec] = useState(100);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loopName, setLoopName] = useState("");
   const [infoBanner, setInfoBanner] = useState({
     message: "",
     error: false,
     trigger: 0,
   });
+  const [isMixerOpen, setIsMixerOpen] = useState(false);
+  const {
+    status,
+    error: stemsError,
+    triggerStemSplit,
+  } = useStems(video?.id?.videoId);
 
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
@@ -437,38 +444,71 @@ export default function EditAudioPage() {
       )}
 
       {audioEl && (
-        <div
-          id="waveform"
-          ref={wsContainerRef}
-          className={clsx(
-            "touch-none select-none overflow-hidden relative",
-            !isWaveReady && "opacity-0 pointer-events-none absolute",
-          )}
-        >
-          <Header title={decodeHtmlEntities(video.snippet.title)} />
-          <div className="absolute bottom-10 right-3 bg-red-300 p-1 rounded-md flex gap-1 items-center z-10">
-            <RxMixerVertical />
-            Stems
+        <>
+          <div
+            id="waveform"
+            ref={wsContainerRef}
+            className={clsx(
+              "touch-none select-none overflow-hidden relative",
+              !isWaveReady && "opacity-0 pointer-events-none absolute",
+            )}
+          >
+            <Header title={decodeHtmlEntities(video.snippet.title)} />
+            <div className={`min-h-[${waveHeight}]`}>
+              <WavesurferPlayer
+                height={waveHeight}
+                waveColor={getCssVar("--sub-alt-color")}
+                backend="WebAudio"
+                media={audioEl}
+                responsive={!isMobileDevice()}
+                normalize={isMobileDevice()}
+                progressColor={getCssVar("--text-color")}
+                minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
+                pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
+                onReady={handleReady}
+                onClick={handleWsClick}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                plugins={wsPlugins}
+              />
+              <button
+                onClick={() => setIsMixerOpen(true)}
+                className={clsx(
+                  "absolute bottom-10 right-3 p-2 rounded-md flex gap-2 items-center z-10 text-sm font-medium transition-colors shadow-md",
+                  status === "done" &&
+                    "bg-emerald-600 text-white hover:bg-emerald-700",
+                  status === "failed" &&
+                    "bg-rose-600 text-white hover:bg-rose-700",
+                  status !== "done" &&
+                    status !== "failed" &&
+                    "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
+                  (status === "downloading" ||
+                    status === "processing" ||
+                    status === "hydrating") &&
+                    "animate-pulse",
+                )}
+              >
+                <RxMixerVertical
+                  className={clsx(status === "processing" && "animate-spin")}
+                />
+                {status === "idle" && "Stems"}
+                {status === "downloading" && "Downloading..."}
+                {status === "processing" && "AI Processing..."}
+                {status === "hydrating" && "Caching..."}
+                {status === "done" && "Mixer"}
+                {status === "failed" && "Failed"}
+              </button>
+            </div>
           </div>
-          <div className={`min-h-[${waveHeight}]`}>
-            <WavesurferPlayer
-              height={waveHeight}
-              waveColor={getCssVar("--sub-alt-color")}
-              backend="WebAudio"
-              media={audioEl}
-              responsive={!isMobileDevice()}
-              normalize={isMobileDevice()}
-              progressColor={getCssVar("--text-color")}
-              minPxPerSec={isMobileDevice() ? 50 : minPxPerSec}
-              pixelRatio={isMobileDevice() ? 1 : window.devicePixelRatio}
-              onReady={handleReady}
-              onClick={handleWsClick}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              plugins={wsPlugins}
+          {isMixerOpen && (
+            <Mixer
+              status={status}
+              error={stemsError}
+              onTriggerSplit={triggerStemSplit}
+              onClose={() => setIsMixerOpen(false)}
             />
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {isWaveReady && (

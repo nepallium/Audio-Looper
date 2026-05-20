@@ -52,6 +52,16 @@ function waveReducer(wave, action) {
       };
     }
 
+    case "set_stems_status": {
+      return {
+        ...wave,
+        stemsState: {
+          ...wave.stemsState,
+          status: action,
+        },
+      };
+    }
+
     default: {
       throw Error("unknown action in WaveContext: " + action.type);
     }
