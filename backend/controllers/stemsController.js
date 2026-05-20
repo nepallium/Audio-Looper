@@ -18,7 +18,7 @@ const scheduleCleanup = (videoId, stemsOutputDir) => {
   }, TIME_BEFORE_CLEAR);
 };
 
-export async function processAudioStemSplit(req, res) {
+export async function stemSplitAudio(req, res) {
   const { videoId } = req.params;
   if (!videoId) {
     return res.status(400).send("Missing videoId parameter");
@@ -91,7 +91,10 @@ export async function processAudioStemSplit(req, res) {
         .push({ videoId, inputFilePath, stemsOutputDir })
         .on("finish", () => {
           console.log(`[Success] AI Stem generation complete for: ${videoId}`);
-          jobStore.set(videoId, { status: "done" });
+          jobStore.set(videoId, {
+            status: "done",
+            stems: ["vocals", "bass", "drums", "piano", "guitar", "other"],
+          });
           scheduleCleanup(videoId, stemsOutputDir);
         })
         .on("failed", (err) => {
@@ -191,3 +194,39 @@ const separationQueue = new Queue(
     maxRetries: 0,
   },
 );
+
+export function getJobStatus(req, res) {
+  const job = jobStore.get(req.params.videoId);
+  if (!job) return res.status(404).json({ status: "not_found" });
+  res.json(job);
+}
+
+export function getStemFile(req, res) {
+  const { videoId, stemName } = req.params;
+
+  // prod
+  // const stemFilePath = path.join(
+  //   TMP_STORAGE_PATH,
+  //   "stems",
+  //   videoId,
+  //   `${stemName}.opus`,
+  // );
+
+  // dev
+  const stemFilePath = path.join(TMP_STORAGE_PATH, "stems", `${stemName}.opus`);
+
+  res.setHeader("Content-Type", "audio/ogg; codecs=opus");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${stemName}.opus"`,
+  );
+
+  const fileStream = fs.createReadStream(stemFilePath);
+
+  fileStream.on("error", (err) => {
+    console.error(`[Stream Error] Failure on stem ${stemName}:`, err);
+    if (!res.headersSent) res.status(500).send("Error streaming audio file.");
+  });
+
+  fileStream.pipe(res);
+}
