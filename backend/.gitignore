@@ -1,6 +1,6 @@
 .env
-./node_modules
+node_modules/
 package-lock.json
 /config/spleeter/model
 /config/bs_roformer/models
-tmpStorage/
+/tmpStorage

@@ -68,8 +68,11 @@ export async function processAudioStemSplit(req, res) {
     downloadProcess.on("close", (code) => {
       // failed download
       if (code !== 0) {
-        jobStore.set(videoId, { status: "failed", error: "Failed while downloading yt audio" });
-        scheduleCleanup(videoId, stemsOutputDir)
+        jobStore.set(videoId, {
+          status: "failed",
+          error: "Failed while downloading yt audio",
+        });
+        scheduleCleanup(videoId, stemsOutputDir);
         return;
       }
 
@@ -78,7 +81,7 @@ export async function processAudioStemSplit(req, res) {
         .map((line) => line.trim())
         .filter(Boolean)
         .at(-1);
-      const inputFilePath = printedPath
+      const inputFilePath = printedPath;
 
       console.log(
         `[Enqueue] Moving task into hardware throttling queue: ${videoId}`,
@@ -96,8 +99,11 @@ export async function processAudioStemSplit(req, res) {
             `[Pipeline Failure] Processing aborted for ${videoId}:`,
             err.message,
           );
-          jobStore.set(videoId, { status: "failed", error: "Error while stem splitting: " + err.message });
-          scheduleCleanup(videoId, stemsOutputDir)
+          jobStore.set(videoId, {
+            status: "failed",
+            error: "Error while stem splitting: " + err.message,
+          });
+          scheduleCleanup(videoId, stemsOutputDir);
         });
     });
   } catch (err) {
