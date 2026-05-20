@@ -170,8 +170,9 @@ export async function getLoopRegions(key) {
 
 // Stems
 export async function isStemsExists(key) {
-  const audio = await db.audios.where("id").equals(key);
-  return audio.stems;
+  const audio = await db.audios.get("id");
+  // Returns true if stems exist and has at least one key, false otherwise
+  return !!(audio?.stems && Object.keys(audio.stems).length > 0);
 }
 
 /**
@@ -188,11 +189,7 @@ export async function cacheAudioStems(key, stemsMap) {
     }
 
     // initialize and hydrate the audio's stems dictionary object
-    currentRecord.stems = currentRecord.stems || {};
-
-    Object.keys(stemsMap).forEach((stemName) => {
-      currentRecord.stems[stemName] = stemsMap[stemName];
-    });
+    currentRecord.stems = stemsMap;
 
     // Write back the updated record to local disk storage
     await db.audios.put(currentRecord);

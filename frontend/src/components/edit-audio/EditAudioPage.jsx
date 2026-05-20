@@ -17,6 +17,7 @@ import Header from "../Header.jsx";
 import useScreenHeight from "../../hooks/useScreenHeight.js";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { IoIosFastforward } from "react-icons/io";
+import { RxMixerVertical } from "react-icons/rx";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -440,11 +441,15 @@ export default function EditAudioPage() {
           id="waveform"
           ref={wsContainerRef}
           className={clsx(
-            "touch-none select-none overflow-hidden",
+            "touch-none select-none overflow-hidden relative",
             !isWaveReady && "opacity-0 pointer-events-none absolute",
           )}
         >
           <Header title={decodeHtmlEntities(video.snippet.title)} />
+          <div className="absolute bottom-10 right-3 bg-red-300 p-1 rounded-md flex gap-1 items-center z-10">
+            <RxMixerVertical />
+            Stems
+          </div>
           <div className={`min-h-[${waveHeight}]`}>
             <WavesurferPlayer
               height={waveHeight}
