@@ -3,11 +3,20 @@ import path from "path";
 import fs from "fs";
 import Queue from "better-queue";
 import Docker from "dockerode";
+import { TIMEOUT } from "dns";
 
 const docker = new Docker();
-export const jobStore = new Map(); // jobId -> { status: "processing"|"done"|"failed" }
+export const jobStore = new Map(); // jobId -> { status: "downloading"|"processing"|"done"|"failed" }
 
-const TMP_STORAGE_PATH = "backend/tmpStorage/";
+const TMP_STORAGE_PATH = "tmpStorage/";
+const TIME_BEFORE_CLEAR = 30 * 1000;
+
+const scheduleCleanup = (videoId, stemsOutputDir) => {
+  setTimeout(() => {
+    jobStore.delete(videoId);
+    fs.rmSync(stemsOutputDir, { recursive: true, force: true });
+  }, TIME_BEFORE_CLEAR);
+};
 
 export async function processAudioStemSplit(req, res) {
   const { videoId } = req.params;
@@ -15,8 +24,13 @@ export async function processAudioStemSplit(req, res) {
     return res.status(400).send("Missing videoId parameter");
   }
 
+  const existing = jobStore.get(videoId);
+  if (existing) {
+    return res.json({ jobId: videoId, status: existing.status });
+  }
+
   const audioStoreDir = path.join(TMP_STORAGE_PATH, "audios");
-  const inputFilePath = path.join(audioStoreDir, `${videoId}.opus`);
+  const outputTemplate = path.join(audioStoreDir, "%(id)s.%(ext)s");
   const url = `https://www.youtube.com/watch?v=${videoId}`;
 
   // where the audio's stems will live (backend/tmpStorage/stems/:videoId/ [6 stems] )
@@ -29,38 +43,61 @@ export async function processAudioStemSplit(req, res) {
 
     console.log(`Stem split: Starting yt-dlp re-download for: ${videoId}`);
 
-    const downloadProcess = spawn("yt-dlp", ["-x", "-o", inputFilePath, url]);
+    const downloadProcess = spawn("yt-dlp", [
+      "-x",
+      "--audio-format",
+      "opus",
+      "--no-playlist",
+      "-o",
+      outputTemplate,
+      "--print",
+      "after_move:filepath",
+      url,
+    ]);
+    let downloadStdout = "";
+    downloadProcess.stdout.on("data", (d) => {
+      downloadStdout += d.toString();
+    });
     downloadProcess.stderr.on("data", (d) =>
       console.error("[yt-dlp]", d.toString()),
     );
 
-    jobStore.set(videoId, { status: "queued" });
-    res.json({ jobId: videoId, status: "queued" });
+    jobStore.set(videoId, { status: "downloading" });
+    res.json({ jobId: videoId, status: "downloading" });
 
     downloadProcess.on("close", (code) => {
+      // failed download
       if (code !== 0) {
-        jobStore.set(videoId, { status: "failed" });
-        setTimeout(() => jobStore.delete(videoId), 3 * 60 * 1000);
+        jobStore.set(videoId, { status: "failed", error: "Failed while downloading yt audio" });
+        scheduleCleanup(videoId, stemsOutputDir)
         return;
       }
+
+      const printedPath = downloadStdout
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .at(-1);
+      const inputFilePath = printedPath
+
       console.log(
         `[Enqueue] Moving task into hardware throttling queue: ${videoId}`,
       );
-      jobStore.set(videoId, { status: "queued" });
+      jobStore.set(videoId, { status: "processing" });
       separationQueue
         .push({ videoId, inputFilePath, stemsOutputDir })
         .on("finish", () => {
           console.log(`[Success] AI Stem generation complete for: ${videoId}`);
           jobStore.set(videoId, { status: "done" });
-          setTimeout(() => jobStore.delete(videoId), 3 * 60 * 1000);
+          scheduleCleanup(videoId, stemsOutputDir);
         })
         .on("failed", (err) => {
           console.error(
             `[Pipeline Failure] Processing aborted for ${videoId}:`,
             err.message,
           );
-          jobStore.set(videoId, { status: "failed", error: err.message });
-          setTimeout(() => jobStore.delete(videoId), 3 * 60 * 1000);
+          jobStore.set(videoId, { status: "failed", error: "Error while stem splitting: " + err.message });
+          scheduleCleanup(videoId, stemsOutputDir)
         });
     });
   } catch (err) {
@@ -81,7 +118,7 @@ const separationQueue = new Queue(
       const absoluteOutputDir = path.resolve(stemsOutputDir);
       const absoluteInputFile = path.resolve(inputFilePath);
       const absoluteModelsDir = path.resolve(
-        path.join("backend/config/bs_roformer/models"),
+        path.join("config/bs_roformer/models"),
       );
 
       // Execute via Docker SDK using the official beveradb image
@@ -97,12 +134,22 @@ const separationQueue = new Queue(
           "/stemsOutputForAudio",
           "--output_format",
           "OPUS",
+          "--custom_output_names",
+          JSON.stringify({
+            Vocals: "vocals",
+            Bass: "bass",
+            Drums: "drums",
+            Piano: "piano",
+            Guitar: "guitar",
+            Other: "other",
+          }),
           "--chunk_duration",
           "600", // 10-minute internal chunking bounds VRAM to hopefully < 4GB per song
         ],
         process.stdout, // Pipe container logs to server stdout for status visibility
         {
           HostConfig: {
+            AutoRemove: true,
             Binds: [
               `${absoluteOutputDir}:/stemsOutputForAudio`,
               `${absoluteInputFile}:/inputAudio`,
