@@ -93,7 +93,7 @@ export async function stemSplitAudio(req, res) {
           console.log(`[Success] AI Stem generation complete for: ${videoId}`);
           jobStore.set(videoId, {
             status: "done",
-            stems: ["vocals", "bass", "drums", "piano", "guitar", "other"],
+            stemNames: ["vocals", "bass", "drums", "piano", "guitar", "other"],
           });
           scheduleCleanup(videoId, stemsOutputDir);
         })
