@@ -1,10 +1,28 @@
 import { useEffect, useState, useRef } from "react";
-import { IoArrowBack } from "react-icons/io5";
 import clsx from "clsx";
+
+// icons
+import { IoArrowBack } from "react-icons/io5";
+import { IoMdMicrophone } from "react-icons/io";
+import { GiGuitarBassHead } from "react-icons/gi";
+import { CgPiano } from "react-icons/cg";
+import { PiGuitar } from "react-icons/pi";
+import { IoMusicalNotes } from "react-icons/io5";
+import { LiaDrumSolid } from "react-icons/lia";
+
+const STEM_ICONS = {
+  vocals: <IoMdMicrophone className="text-sky-400" size={16} />,
+  bass: <GiGuitarBassHead className="text-green-400" size={16} />,
+  drums: <LiaDrumSolid className="text-red-400" size={16} />,
+  piano: <CgPiano className="text-purple-400" size={16} />,
+  guitar: <PiGuitar className="text-orange-400" size={16} />,
+  other: <IoMusicalNotes className="text-neutral-400" size={16} />,
+};
 
 export default function Mixer({
   status,
   error,
+  audioEl,
   stems,
   onTriggerSplit,
   onBack,
@@ -24,6 +42,7 @@ export default function Mixer({
   const audioCtxRef = useRef(null);
   const gainNodesRef = useRef({});
   const audioBuffersRef = useRef({});
+  const sourceNodesRef = useRef({});
 
   // 2. THE ENGINE LOGIC (Unpacking the files into memory)
   useEffect(() => {
@@ -36,6 +55,7 @@ export default function Mixer({
           window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContextClass();
         audioCtxRef.current = ctx;
+        console.log("[1] AudioContext created, state:", ctx.state);
 
         await Promise.all(
           Object.keys(stems).map(async (name) => {
@@ -52,6 +72,11 @@ export default function Mixer({
       } catch (err) {
         console.error("Critical error building audio engine:", err);
       } finally {
+        console.log(
+          "[2] Buffers decoded:",
+          Object.keys(audioBuffersRef.current),
+        );
+        console.log("[2] Gain nodes:", Object.keys(gainNodesRef.current));
         setIsDecoding(false);
       }
     }
@@ -75,6 +100,89 @@ export default function Mixer({
       );
     }
   };
+  console.log(
+    "[3] Hijack effect ran — audioEl:",
+    !!audioEl,
+    "status:",
+    status,
+    "isDecoding:",
+    isDecoding,
+  );
+  // 4. THE AUDIO HIJACK ENGINE (Syncing Stems to Wavesurfer)
+  useEffect(() => {
+    // Only run if the audio element exists, stems are done, and decoding is finished
+    if (!audioEl || status !== "done" || isDecoding) return;
+
+    // Helper to instantly kill all 6 tracks
+    const stopStems = () => {
+      Object.keys(sourceNodesRef.current).forEach((name) => {
+        try {
+          sourceNodesRef.current[name].stop();
+        } catch (e) {}
+      });
+      sourceNodesRef.current = {};
+    };
+
+    // Helper to start all 6 tracks at an exact timestamp
+    const playStems = async (startTime) => {
+      console.log("[4] playStems called, startTime:", startTime);
+      console.log("[4] ctx state:", audioCtxRef.current?.state);
+      console.log("[4] buffer keys:", Object.keys(audioBuffersRef.current));
+      console.log("[4] gain keys:", Object.keys(gainNodesRef.current));
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+
+      // WAIT for the context to be running before scheduling sources
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+
+      stopStems(); // clear old nodes after context is confirmed running
+
+      Object.keys(audioBuffersRef.current).forEach((name) => {
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffersRef.current[name];
+        source.connect(gainNodesRef.current[name]);
+        console.log("[5] starting source for:", name);
+        source.start(0, startTime);
+        sourceNodesRef.current[name] = source;
+      });
+    };
+
+    // Listeners that react to Wavesurfer's background actions
+    const handlePlay = () => {
+      playStems(audioEl.currentTime);
+    };
+    const handlePause = () => stopStems();
+    const handleSeeking = () => stopStems(); // Stop audio while user is dragging the timeline
+    const handleSeeked = () => {
+      if (!audioEl.paused) playStems(audioEl.currentTime); // Resume if they were playing
+    };
+
+    // Attach the listeners
+    audioEl.addEventListener("play", handlePlay);
+    audioEl.addEventListener("pause", handlePause);
+    audioEl.addEventListener("seeking", handleSeeking);
+    audioEl.addEventListener("seeked", handleSeeked);
+
+    // MUTE THE MASTER TRACK (The hijack!)
+    audioEl.muted = true;
+
+    // If the song is already playing when the stems finish decoding, start them instantly!
+    if (!audioEl.paused) {
+      playStems(audioEl.currentTime);
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      audioEl.removeEventListener("play", handlePlay);
+      audioEl.removeEventListener("pause", handlePause);
+      audioEl.removeEventListener("seeking", handleSeeking);
+      audioEl.removeEventListener("seeked", handleSeeked);
+      audioEl.muted = false; // Give audio back to the master track
+      stopStems();
+    };
+  }, [audioEl, status, isDecoding]);
 
   return (
     <div className="w-full h-full p-4 flex flex-col">
@@ -158,9 +266,12 @@ export default function Mixer({
                   className="flex flex-col bg-neutral-950 p-3 rounded-lg border border-neutral-800/50"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-300">
-                      {name}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {STEM_ICONS[name] || <IoMusicalNotes size={16} />}
+                      <span className="text-xs font-semibold uppercase tracking-wider text-neutral-300">
+                        {name}
+                      </span>
+                    </div>
                     <button
                       onClick={() =>
                         handleVolumeChange(name, volumes[name] > 0 ? 0 : 1)

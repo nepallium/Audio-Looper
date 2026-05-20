@@ -483,18 +483,22 @@ export default function EditAudioPage() {
                 />
               </div>
 
-              {/* VIEW B: THE MIXER PANEL (Sits perfectly over the ghost waveform) */}
-              {activeView === "mixer" && (
-                <div className="absolute inset-0 z-20 bg-neutral-900 overflow-y-auto">
-                  <Mixer
-                    status={status}
-                    error={stemsError}
-                    stems={stems}
-                    onTriggerSplit={triggerStemSplit}
-                    onBack={() => setActiveView("waveform")}
-                  />
-                </div>
-              )}
+              {/* VIEW B: THE MIXER PANEL */}
+              <div
+                className={clsx(
+                  "absolute inset-0 z-20 bg-neutral-900 overflow-y-auto",
+                  activeView !== "mixer" && "hidden", // Hides it without destroying the audio engine!
+                )}
+              >
+                <Mixer
+                  status={status}
+                  error={stemsError}
+                  stems={stems}
+                  audioEl={audioEl} // master audio element
+                  onTriggerSplit={triggerStemSplit}
+                  onBack={() => setActiveView("waveform")}
+                />
+              </div>
             </div>
 
             {/* THE FLOATING TOGGLE BUTTON */}

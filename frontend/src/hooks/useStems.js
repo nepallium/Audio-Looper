@@ -70,6 +70,7 @@ export function useStems(videoId) {
       // check idb cache first
       const record = await loadAudioFromDB(videoId);
       if (record && record.stems && Object.keys(record.stems).length > 0) {
+        setStems(record.stems);
         setStatus("done");
         return;
       }
