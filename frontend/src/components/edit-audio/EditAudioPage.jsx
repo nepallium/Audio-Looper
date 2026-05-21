@@ -499,50 +499,49 @@ export default function EditAudioPage() {
                   onBack={() => setActiveView("waveform")}
                 />
               </div>
+              {/* THE FLOATING TOGGLE BUTTON */}
+              <button
+                onClick={() => {
+                  // Toggle logic: If done, swap views. If not done, it acts as the trigger.
+                  if (status === "done") {
+                    setActiveView((prev) =>
+                      prev === "waveform" ? "mixer" : "waveform",
+                    );
+                  } else if (status === "idle" || status === "failed") {
+                    setActiveView("mixer"); // Open the view to show the 'Generate' or 'Error' screen
+                  }
+                }}
+                className={clsx(
+                  "absolute top-3 right-8 p-2 rounded-md flex gap-2 items-center z-30 text-sm font-medium shadow-md transition-all",
+                  status === "done" &&
+                    activeView === "waveform" &&
+                    "bg-emerald-600 text-white hover:bg-emerald-700",
+                  status === "done" &&
+                    activeView === "mixer" &&
+                    "bg-neutral-700 text-white hover:bg-neutral-600", // Dimmer when already inside
+                  status === "failed" &&
+                    "bg-rose-600 text-white hover:bg-rose-700",
+                  status !== "done" &&
+                    status !== "failed" &&
+                    "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
+                  (status === "downloading" ||
+                    status === "processing" ||
+                    status === "hydrating") &&
+                    "animate-pulse",
+                )}
+              >
+                <RxMixerVertical
+                  className={clsx(status === "processing" && "animate-spin")}
+                />
+                {status === "idle" && "Stems"}
+                {status === "downloading" && "Downloading..."}
+                {status === "processing" && "AI Processing..."}
+                {status === "hydrating" && "Caching..."}
+                {status === "done" && activeView === "waveform" && "Mixer"}
+                {status === "done" && activeView === "mixer" && "Waveform"}
+                {status === "failed" && "Failed"}
+              </button>
             </div>
-
-            {/* THE FLOATING TOGGLE BUTTON */}
-            <button
-              onClick={() => {
-                // Toggle logic: If done, swap views. If not done, it acts as the trigger.
-                if (status === "done") {
-                  setActiveView((prev) =>
-                    prev === "waveform" ? "mixer" : "waveform",
-                  );
-                } else if (status === "idle" || status === "failed") {
-                  setActiveView("mixer"); // Open the view to show the 'Generate' or 'Error' screen
-                }
-              }}
-              className={clsx(
-                "absolute bottom-4 right-4 p-2 rounded-md flex gap-2 items-center z-30 text-sm font-medium shadow-md transition-all",
-                status === "done" &&
-                  activeView === "waveform" &&
-                  "bg-emerald-600 text-white hover:bg-emerald-700",
-                status === "done" &&
-                  activeView === "mixer" &&
-                  "bg-neutral-700 text-white hover:bg-neutral-600", // Dimmer when already inside
-                status === "failed" &&
-                  "bg-rose-600 text-white hover:bg-rose-700",
-                status !== "done" &&
-                  status !== "failed" &&
-                  "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
-                (status === "downloading" ||
-                  status === "processing" ||
-                  status === "hydrating") &&
-                  "animate-pulse",
-              )}
-            >
-              <RxMixerVertical
-                className={clsx(status === "processing" && "animate-spin")}
-              />
-              {status === "idle" && "Stems"}
-              {status === "downloading" && "Downloading..."}
-              {status === "processing" && "AI Processing..."}
-              {status === "hydrating" && "Caching..."}
-              {status === "done" && activeView === "waveform" && "Mixer"}
-              {status === "done" && activeView === "mixer" && "Waveform"}
-              {status === "failed" && "Failed"}
-            </button>
           </div>
         </>
       )}

@@ -55,7 +55,6 @@ export default function Mixer({
           window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContextClass();
         audioCtxRef.current = ctx;
-        console.log("[1] AudioContext created, state:", ctx.state);
 
         await Promise.all(
           Object.keys(stems).map(async (name) => {
@@ -72,11 +71,6 @@ export default function Mixer({
       } catch (err) {
         console.error("Critical error building audio engine:", err);
       } finally {
-        console.log(
-          "[2] Buffers decoded:",
-          Object.keys(audioBuffersRef.current),
-        );
-        console.log("[2] Gain nodes:", Object.keys(gainNodesRef.current));
         setIsDecoding(false);
       }
     }
@@ -100,14 +94,7 @@ export default function Mixer({
       );
     }
   };
-  console.log(
-    "[3] Hijack effect ran — audioEl:",
-    !!audioEl,
-    "status:",
-    status,
-    "isDecoding:",
-    isDecoding,
-  );
+
   // 4. THE AUDIO HIJACK ENGINE (Syncing Stems to Wavesurfer)
   useEffect(() => {
     // Only run if the audio element exists, stems are done, and decoding is finished
@@ -125,10 +112,6 @@ export default function Mixer({
 
     // Helper to start all 6 tracks at an exact timestamp
     const playStems = async (startTime) => {
-      console.log("[4] playStems called, startTime:", startTime);
-      console.log("[4] ctx state:", audioCtxRef.current?.state);
-      console.log("[4] buffer keys:", Object.keys(audioBuffersRef.current));
-      console.log("[4] gain keys:", Object.keys(gainNodesRef.current));
       const ctx = audioCtxRef.current;
       if (!ctx) return;
 
@@ -143,7 +126,6 @@ export default function Mixer({
         const source = ctx.createBufferSource();
         source.buffer = audioBuffersRef.current[name];
         source.connect(gainNodesRef.current[name]);
-        console.log("[5] starting source for:", name);
         source.start(0, startTime);
         sourceNodesRef.current[name] = source;
       });
