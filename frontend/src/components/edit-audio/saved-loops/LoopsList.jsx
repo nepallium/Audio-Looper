@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getLoopRegions } from "@src/db/indexedDB.js";
 import LoopCard from "./LoopCard";
-import { useWaveContext } from "../WaveContext";
+import { useWaveContext } from "../contexts/WaveContext";
 
 export default function LoopsList({ setIsModalOpen }) {
   const wave = useWaveContext();

@@ -2,12 +2,19 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import EditAudioPage from "./EditAudioPage";
 import { loadAudioFromDB, loadTmpAudioFromDB } from "@src/db/indexedDB.js";
-import { useWaveContext, useWaveDispatch, WaveProvider } from "./WaveContext";
+import {
+  useWaveContext,
+  useWaveDispatch,
+  WaveProvider,
+} from "./contexts/WaveContext";
+import { AudioEngineProvider } from "./contexts/AudioEngineContext";
 
 export default function Controller() {
   return (
     <WaveProvider>
-      <ControllerInner />
+      <AudioEngineProvider>
+        <ControllerInner />
+      </AudioEngineProvider>
     </WaveProvider>
   );
 }

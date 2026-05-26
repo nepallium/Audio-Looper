@@ -1,6 +1,6 @@
 import { GoTrash } from "react-icons/go";
 import formatTime from "../../../utils/formatTime";
-import { useWaveContext } from "../WaveContext";
+import { useWaveContext } from "../contexts/WaveContext";
 
 export default function LoopCard({ region, setIsModalOpen, setRegions }) {
   const waveContext = useWaveContext();

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 
 // icons
@@ -9,6 +9,7 @@ import { CgPiano } from "react-icons/cg";
 import { PiGuitar } from "react-icons/pi";
 import { IoMusicalNotes } from "react-icons/io5";
 import { LiaDrumSolid } from "react-icons/lia";
+import { useAudioEngine } from "./contexts/AudioEngineContext.jsx";
 
 const STEM_ICONS = {
   vocals: <IoMdMicrophone className="text-sky-400" size={16} />,
@@ -19,6 +20,8 @@ const STEM_ICONS = {
   other: <IoMusicalNotes className="text-neutral-400" size={16} />,
 };
 
+const STEM_NAMES = ["vocals", "bass", "drums", "piano", "guitar", "other"];
+
 export default function Mixer({
   status,
   error,
@@ -27,7 +30,15 @@ export default function Mixer({
   onTriggerSplit,
   onBack,
 }) {
-  const stemNames = ["vocals", "bass", "drums", "piano", "guitar", "other"];
+  const engine = useAudioEngine();
+  const {
+    audioCtxRef,
+    gainNodesRef,
+    sourceNodesRef,
+    originalBuffersRef,
+    audioBuffersRef,
+  } = engine;
+
   const [isDecoding, setIsDecoding] = useState(false);
   const [volumes, setVolumes] = useState({
     vocals: 1,
@@ -38,49 +49,138 @@ export default function Mixer({
     other: 1,
   });
 
-  // Hardware references that don't trigger UI re-renders
-  const audioCtxRef = useRef(null);
-  const gainNodesRef = useRef({});
-  const audioBuffersRef = useRef({});
-  const sourceNodesRef = useRef({});
+  const volumesRef = useRef(volumes);
+  const lastStemsRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const decodeRunIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status !== "done" || !stems) {
+      setIsDecoding(false);
+    }
+  }, [status, stems]);
+
+  useEffect(() => {
+    volumesRef.current = volumes;
+  }, [volumes]);
+
+  const stopAllStems = () => {
+    Object.keys(sourceNodesRef.current).forEach((name) => {
+      try {
+        sourceNodesRef.current[name].stop();
+        sourceNodesRef.current[name].disconnect();
+      } catch (err) {}
+    });
+    sourceNodesRef.current = {};
+  };
 
   // 2. THE ENGINE LOGIC (Unpacking the files into memory)
   useEffect(() => {
     if (status !== "done" || !stems) return;
+
+    let cancelled = false;
+    const runId = (decodeRunIdRef.current += 1);
 
     async function initializeAudioEngine() {
       setIsDecoding(true);
       try {
         const AudioContextClass =
           window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContextClass();
-        audioCtxRef.current = ctx;
+
+        if (!AudioContextClass) {
+          throw new Error("AudioContext is not supported");
+        }
+
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+          audioCtxRef.current = new AudioContextClass();
+        }
+
+        if (lastStemsRef.current !== stems) {
+          stopAllStems();
+          originalBuffersRef.current = {};
+          audioBuffersRef.current = {};
+          lastStemsRef.current = stems;
+        }
+
+        const hasAllBuffers = STEM_NAMES.every(
+          (name) => originalBuffersRef.current[name],
+        );
+        if (hasAllBuffers) {
+          setIsDecoding(false);
+          return;
+        }
+
+        const ctx = audioCtxRef.current;
+
+        if (ctx.state === "suspended") {
+          try {
+            await ctx.resume();
+          } catch (err) {}
+        }
 
         await Promise.all(
-          Object.keys(stems).map(async (name) => {
+          STEM_NAMES.map(async (name) => {
+            if (!stems[name]) return;
             const arrayBuffer = await stems[name].arrayBuffer();
             const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
+            originalBuffersRef.current[name] = decodedBuffer;
             audioBuffersRef.current[name] = decodedBuffer;
 
-            const gainNode = ctx.createGain();
-            gainNode.gain.setValueAtTime(volumes[name], ctx.currentTime);
-            gainNode.connect(ctx.destination);
-            gainNodesRef.current[name] = gainNode;
+            if (!gainNodesRef.current[name]) {
+              const gainNode = ctx.createGain();
+              gainNode.gain.setValueAtTime(
+                volumesRef.current[name],
+                ctx.currentTime,
+              );
+              gainNode.connect(ctx.destination);
+              gainNodesRef.current[name] = gainNode;
+            } else {
+              gainNodesRef.current[name].gain.setValueAtTime(
+                volumesRef.current[name],
+                ctx.currentTime,
+              );
+            }
           }),
         );
       } catch (err) {
         console.error("Critical error building audio engine:", err);
       } finally {
-        setIsDecoding(false);
+        if (!cancelled && isMountedRef.current && runId === decodeRunIdRef.current) {
+          setIsDecoding(false);
+        }
       }
     }
 
     initializeAudioEngine();
 
     return () => {
-      if (audioCtxRef.current) audioCtxRef.current.close();
+      cancelled = true;
     };
-  }, [status, stems]);
+  }, [status, stems, audioCtxRef, gainNodesRef, originalBuffersRef, audioBuffersRef]);
+
+  useEffect(() => {
+    return () => {
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+      }
+      originalBuffersRef.current = {};
+      audioBuffersRef.current = {};
+      gainNodesRef.current = {};
+      sourceNodesRef.current = {};
+    };
+  }, [
+    audioCtxRef,
+    originalBuffersRef,
+    audioBuffersRef,
+    gainNodesRef,
+    sourceNodesRef,
+  ]);
 
   // 3. WIRING THE SLIDERS TO THE ENGINE
   const handleVolumeChange = (name, val) => {
@@ -90,7 +190,7 @@ export default function Mixer({
     if (gainNodesRef.current[name] && audioCtxRef.current) {
       gainNodesRef.current[name].gain.linearRampToValueAtTime(
         volumeValue,
-        audioCtxRef.current.currentTime + 0.01, // Smooth transition, no popping
+        audioCtxRef.current.currentTime + 0.02,
       );
     }
   };
@@ -101,14 +201,7 @@ export default function Mixer({
     if (!audioEl || status !== "done" || isDecoding) return;
 
     // Helper to instantly kill all 6 tracks
-    const stopStems = () => {
-      Object.keys(sourceNodesRef.current).forEach((name) => {
-        try {
-          sourceNodesRef.current[name].stop();
-        } catch (e) {}
-      });
-      sourceNodesRef.current = {};
-    };
+    const stopStems = () => stopAllStems();
 
     // Helper to start all 6 tracks at an exact timestamp
     const playStems = async (startTime) => {
@@ -125,6 +218,7 @@ export default function Mixer({
       Object.keys(audioBuffersRef.current).forEach((name) => {
         const source = ctx.createBufferSource();
         source.buffer = audioBuffersRef.current[name];
+        source.playbackRate.setValueAtTime(1, ctx.currentTime);
         source.connect(gainNodesRef.current[name]);
         source.start(0, startTime);
         sourceNodesRef.current[name] = source;
@@ -232,7 +326,7 @@ export default function Mixer({
 
       {/* STATE: DONE (The 3x2 Grid) */}
       {status === "done" && (
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center relative">
           {isDecoding ? (
             <div className="text-center">
               <div className="w-6 h-6 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-2" />
@@ -242,7 +336,7 @@ export default function Mixer({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 pb-8">
-              {stemNames.map((name) => (
+              {STEM_NAMES.map((name) => (
                 <div
                   key={name}
                   className="flex flex-col bg-neutral-950 p-3 rounded-lg border border-neutral-800/50"

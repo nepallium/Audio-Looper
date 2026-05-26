@@ -10,7 +10,7 @@ import { SyncLoader } from "react-spinners";
 import isMobileDevice from "../../utils/isMobileDevice.js";
 import decodeHtmlEntities from "@shared/utils/decodeHtmlEntities.js";
 import { deleteOneLoop, saveLoops } from "@src/db/indexedDB.js";
-import { useWaveContext, useWaveDispatch } from "./WaveContext.jsx";
+import { useWaveContext, useWaveDispatch } from "./contexts/WaveContext.jsx";
 import InfoBanner from "../InfoBanner.jsx";
 import { getLoopRegions } from "@src/db/indexedDB.js";
 import Header from "../Header.jsx";
