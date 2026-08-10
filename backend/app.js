@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import apiRouter from "./routes/apiRouter.js";
 
-const PORT = 8001;
+const PORT = 8000;
 
 const app = express();
 app.use(cors());
