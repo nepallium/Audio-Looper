@@ -7,14 +7,10 @@ import {
   useWaveDispatch,
   WaveProvider,
 } from "./contexts/WaveContext";
-import { AudioEngineProvider } from "./contexts/AudioEngineContext";
-
 export default function Controller() {
   return (
     <WaveProvider>
-      <AudioEngineProvider>
-        <ControllerInner />
-      </AudioEngineProvider>
+      <ControllerInner />
     </WaveProvider>
   );
 }

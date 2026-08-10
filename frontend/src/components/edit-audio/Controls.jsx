@@ -3,209 +3,16 @@ import { IoMdAddCircle, IoMdRemoveCircle } from "react-icons/io";
 import CustomModal from "../CustomModal";
 import LoopsList from "./saved-loops/LoopsList";
 import { useWaveContext } from "./contexts/WaveContext";
-import { useAudioEngine } from "./contexts/AudioEngineContext.jsx";
-
-const STEM_NAMES = ["vocals", "bass", "drums", "piano", "guitar", "other"];
 const PITCH_RANGE = { min: -12, max: 12 };
 const TEMPO_RANGE = { min: 0.25, max: 1.5, step: 0.01 };
-const PITCH_WINDOW = {
-  size: 2048,
-  hop: 512,
-};
 
 const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const formatSignedValue = (value) => (value > 0 ? `+${value}` : `${value}`);
 
-const yieldToMain = () =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-
-function createHannWindow(length) {
-  const window = new Float32Array(length);
-  const denom = Math.max(1, length - 1);
-
-  for (let i = 0; i < length; i += 1) {
-    window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / denom));
-  }
-
-  return window;
-}
-
-function resampleLinear(input, ratio) {
-  const outputLength = Math.max(1, Math.floor(input.length / ratio));
-  const output = new Float32Array(outputLength);
-
-  for (let i = 0; i < outputLength; i += 1) {
-    const pos = i * ratio;
-    const index = Math.floor(pos);
-    const frac = pos - index;
-    const nextIndex = Math.min(index + 1, input.length - 1);
-    const sample = input[index] * (1 - frac) + input[nextIndex] * frac;
-    output[i] = sample;
-  }
-
-  return output;
-}
-
-async function timeStretchOLA(
-  input,
-  stretch,
-  window,
-  hopIn,
-  shouldAbort,
-) {
-  if (stretch === 1) {
-    return input.slice();
-  }
-
-  const windowSize = window.length;
-  const hopOut = Math.max(1, Math.round(hopIn * stretch));
-  const frameCount = Math.max(
-    1,
-    Math.floor((input.length - windowSize) / hopIn) + 1,
-  );
-  const outputLength = (frameCount - 1) * hopOut + windowSize;
-  const output = new Float32Array(outputLength);
-  const windowSum = new Float32Array(outputLength);
-
-  for (let frame = 0; frame < frameCount; frame += 1) {
-    if (frame % 32 === 0) {
-      if (shouldAbort?.()) {
-        throw new Error("Pitch shift cancelled");
-      }
-      await yieldToMain();
-    }
-    const inPos = frame * hopIn;
-    const outPos = frame * hopOut;
-
-    for (let i = 0; i < windowSize; i += 1) {
-      const inputIndex = inPos + i;
-      if (inputIndex >= input.length) break;
-      const value = input[inputIndex] * window[i];
-      const outIndex = outPos + i;
-      if (outIndex >= outputLength) break;
-      output[outIndex] += value;
-      windowSum[outIndex] += window[i];
-    }
-  }
-
-  for (let i = 0; i < outputLength; i += 1) {
-    if (i % 65536 === 0) {
-      if (shouldAbort?.()) {
-        throw new Error("Pitch shift cancelled");
-      }
-      await yieldToMain();
-    }
-    if (windowSum[i] > 1e-6) {
-      output[i] /= windowSum[i];
-    }
-  }
-
-  return output;
-}
-
-function fitToLength(input, targetLength) {
-  if (input.length === targetLength) {
-    return input;
-  }
-
-  const output = new Float32Array(targetLength);
-  const length = Math.min(targetLength, input.length);
-  output.set(input.subarray(0, length));
-  return output;
-}
-
-async function renderPitchShiftedBuffer(
-  originalBuffer,
-  semitones,
-  audioCtxRef,
-  shouldAbort,
-) {
-  if (semitones === 0) {
-    return originalBuffer;
-  }
-
-  const ratio = Math.pow(2, semitones / 12);
-  const windowSize = PITCH_WINDOW.size;
-  const hopIn = PITCH_WINDOW.hop;
-  const window = createHannWindow(windowSize);
-  const targetLength = originalBuffer.length;
-
-  const processedChannels = Array.from(
-    { length: originalBuffer.numberOfChannels },
-    () => new Float32Array(targetLength),
-  );
-
-  for (
-    let channel = 0;
-    channel < originalBuffer.numberOfChannels;
-    channel += 1
-  ) {
-    const input = originalBuffer.getChannelData(channel);
-    if (shouldAbort?.()) {
-      throw new Error("Pitch shift cancelled");
-    }
-    const resampled = resampleLinear(input, ratio);
-    const stretched = await timeStretchOLA(
-      resampled,
-      ratio,
-      window,
-      hopIn,
-      shouldAbort,
-    );
-    processedChannels[channel] = fitToLength(stretched, targetLength);
-  }
-
-  let offlineCtx = null;
-  let outputBuffer = null;
-
-  try {
-    if (audioCtxRef?.current && audioCtxRef.current.state !== "closed") {
-      outputBuffer = audioCtxRef.current.createBuffer(
-        originalBuffer.numberOfChannels,
-        targetLength,
-        originalBuffer.sampleRate,
-      );
-    } else {
-      const OfflineAudioContextClass =
-        window.OfflineAudioContext || window.webkitOfflineAudioContext;
-      if (!OfflineAudioContextClass) {
-        throw new Error("OfflineAudioContext is not supported");
-      }
-      offlineCtx = new OfflineAudioContextClass(
-        originalBuffer.numberOfChannels,
-        targetLength,
-        originalBuffer.sampleRate,
-      );
-      outputBuffer = offlineCtx.createBuffer(
-        originalBuffer.numberOfChannels,
-        targetLength,
-        originalBuffer.sampleRate,
-      );
-    }
-
-    for (let channel = 0; channel < processedChannels.length; channel += 1) {
-      outputBuffer.copyToChannel(processedChannels[channel], channel);
-    }
-  } finally {
-    if (offlineCtx?.close) {
-      try {
-        await offlineCtx.close();
-      } catch (err) {}
-    }
-  }
-
-  return outputBuffer;
-}
-
 export default function Controls({ wavesurfer }) {
   const waveContext = useWaveContext();
   const audioRef = waveContext.audioRef;
-  const engine = useAudioEngine();
-  const { audioCtxRef, sourceNodesRef, originalBuffersRef, audioBuffersRef } =
-    engine;
 
   const [tempoValue, setTempoValue] = useState(1);
   const [pendingKey, setPendingKey] = useState(0);
@@ -221,20 +28,6 @@ export default function Controls({ wavesurfer }) {
       isMountedRef.current = false;
     };
   }, []);
-
-  const isEngineReady = STEM_NAMES.every(
-    (name) => originalBuffersRef.current[name],
-  );
-
-  const stopAllStems = () => {
-    Object.keys(sourceNodesRef.current).forEach((name) => {
-      try {
-        sourceNodesRef.current[name].stop();
-        sourceNodesRef.current[name].disconnect();
-      } catch (err) {}
-    });
-    sourceNodesRef.current = {};
-  };
 
   const applyTempo = (nextValue) => {
     const tempo = clampValue(
@@ -252,8 +45,6 @@ export default function Controls({ wavesurfer }) {
     if (wavesurfer) {
       wavesurfer.setPlaybackRate(tempo, true);
     }
-
-    // Stems always play at native rate to avoid pitch shifting.
   };
 
   const onTempoChange = ({ target: { value } }) => {
@@ -286,7 +77,7 @@ export default function Controls({ wavesurfer }) {
       PITCH_RANGE.max,
     );
 
-    if (isPitchShifting || !isEngineReady || nextKey === activeKey) {
+    if (isPitchShifting || nextKey === activeKey) {
       setPendingKey(nextKey);
       return;
     }
@@ -294,7 +85,6 @@ export default function Controls({ wavesurfer }) {
     const jobId = (pitchJobIdRef.current += 1);
     setPendingKey(nextKey);
     setIsPitchShifting(true);
-    await yieldToMain();
 
     const audioEl = audioRef?.current || null;
     const wasPlaying = wavesurfer
@@ -314,28 +104,12 @@ export default function Controls({ wavesurfer }) {
       audioEl.pause();
     }
 
-    stopAllStems();
-
     const shouldAbort = () =>
       !isMountedRef.current || pitchJobIdRef.current !== jobId;
 
     try {
       if (shouldAbort()) {
         throw new Error("Pitch shift cancelled");
-      }
-      if (nextKey === 0) {
-        audioBuffersRef.current = { ...originalBuffersRef.current };
-      } else {
-        const shiftedBuffers = {};
-        for (const name of STEM_NAMES) {
-          shiftedBuffers[name] = await renderPitchShiftedBuffer(
-            originalBuffersRef.current[name],
-            nextKey,
-            audioCtxRef,
-            shouldAbort,
-          );
-        }
-        audioBuffersRef.current = shiftedBuffers;
       }
 
       if (isMountedRef.current && pitchJobIdRef.current === jobId) {
@@ -444,7 +218,7 @@ export default function Controls({ wavesurfer }) {
             type="button"
             onClick={() => applyKeyChange(pendingKey)}
             disabled={
-              isPitchShifting || !isEngineReady || pendingKey === activeKey
+              isPitchShifting || pendingKey === activeKey
             }
             className="mt-2 regular-button"
           >

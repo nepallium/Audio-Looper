@@ -168,36 +168,6 @@ export async function getLoopRegions(key) {
   return audio?.regions ?? [];
 }
 
-// Stems
-export async function isStemsExists(key) {
-  const audio = await db.audios.get("id");
-  // Returns true if stems exist and has at least one key, false otherwise
-  return !!(audio?.stems && Object.keys(audio.stems).length > 0);
-}
-
-/**
- * Hydrates an existing audio record with its isolated AI stems inside a transaction.
- * @param {string} key - The core anchor key.
- * @param {object} stemsMap - Key-value pair of blobs { bass: Blob, vocals: Blob, ... }
- */
-export async function cacheAudioStems(key, stemsMap) {
-  return db.transaction("rw", db.audios, async () => {
-    const currentRecord = await db.audios.get(key);
-
-    if (!currentRecord) {
-      throw new Error(`Audio not found: ${key}`);
-    }
-
-    // initialize and hydrate the audio's stems dictionary object
-    currentRecord.stems = stemsMap;
-
-    // Write back the updated record to local disk storage
-    await db.audios.put(currentRecord);
-
-    return currentRecord;
-  });
-}
-
 // Diagnostics
 
 /**

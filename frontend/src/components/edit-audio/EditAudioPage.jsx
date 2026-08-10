@@ -17,9 +17,6 @@ import Header from "../Header.jsx";
 import useScreenHeight from "../../hooks/useScreenHeight.js";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { IoIosFastforward } from "react-icons/io";
-import { RxMixerVertical } from "react-icons/rx";
-import { useStems } from "@/src/hooks/useStems.js";
-import Mixer from "./Mixer.jsx";
 
 export default function EditAudioPage() {
   const dispatch = useWaveDispatch();
@@ -42,13 +39,6 @@ export default function EditAudioPage() {
     error: false,
     trigger: 0,
   });
-  const [activeView, setActiveView] = useState("waveform"); // "waveform" | "mixer"
-  const {
-    status,
-    error: stemsError,
-    triggerStemSplit,
-    stems,
-  } = useStems(video?.id?.videoId);
 
   const touchRegion = useRef({ start: null, end: null, tempRegion: null });
   const timeSliderRef = useRef(null);
@@ -457,12 +447,7 @@ export default function EditAudioPage() {
                 ref={wsContainerRef}
                 className={clsx(
                   "w-full transition-opacity duration-200",
-                  activeView === "mixer"
-                    ? "opacity-0 pointer-events-none"
-                    : "opacity-100",
-                  !isWaveReady &&
-                    activeView === "waveform" &&
-                    "opacity-0 pointer-events-none absolute",
+                  !isWaveReady && "opacity-0 pointer-events-none absolute",
                 )}
               >
                 <WavesurferPlayer
@@ -483,60 +468,7 @@ export default function EditAudioPage() {
                 />
               </div>
 
-              {/* VIEW B: THE MIXER PANEL */}
-              <div
-                className={clsx(
-                  "absolute inset-0 z-20 bg-neutral-900 overflow-y-auto",
-                  activeView !== "mixer" && "hidden", // Hides it without destroying the audio engine!
-                )}
-              >
-                <Mixer
-                  status={status}
-                  error={stemsError}
-                  stems={stems}
-                  audioEl={audioEl} // master audio element
-                  onTriggerSplit={triggerStemSplit}
-                  onBack={() => setActiveView("waveform")}
-                />
-              </div>
-              {/* THE FLOATING TOGGLE BUTTON */}
-              <button
-                onClick={() => {
-                  setActiveView((prev) =>
-                    prev === "waveform" ? "mixer" : "waveform",
-                  );
-                }}
-                className={clsx(
-                  "absolute top-3 right-8 p-2 rounded-md flex gap-2 items-center z-30 text-sm font-medium shadow-md transition-all",
-                  status === "done" &&
-                    activeView === "waveform" &&
-                    "bg-emerald-600 text-white hover:bg-emerald-700",
-                  status === "done" && activeView === "mixer" && "hidden", // hidden, show master volume knob instead
-                  status === "failed" &&
-                    "bg-rose-600 text-white hover:bg-rose-700",
-                  status !== "done" &&
-                    status !== "failed" &&
-                    "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
-                  (status === "downloading" ||
-                    status === "processing" ||
-                    status === "hydrating") &&
-                    "animate-pulse",
-                )}
-              >
-                <RxMixerVertical
-                  className={clsx(
-                    status === "processing" && "animate-spin",
-                    status === "done" && activeView === "mixer" && "hidden",
-                  )}
-                />
-                {status === "idle" && "Stems"}
-                {status === "downloading" && "Downloading..."}
-                {status === "processing" && "AI Processing..."}
-                {status === "hydrating" && "Caching..."}
-                {status === "done" && activeView === "waveform" && "Mixer"}
-                {/* {status === "done" && activeView === "mixer" && "Waveform"} */}
-                {status === "failed" && "Failed"}
-              </button>
+
             </div>
           </div>
         </>
