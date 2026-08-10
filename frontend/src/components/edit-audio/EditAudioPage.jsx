@@ -467,8 +467,6 @@ export default function EditAudioPage() {
                   plugins={wsPlugins}
                 />
               </div>
-
-
             </div>
           </div>
         </>
@@ -488,7 +486,7 @@ export default function EditAudioPage() {
             className="timeline-slider"
           />
 
-          <div className="flex flex-row justify-around">
+          <div className="flex flex-row justify-around py-4">
             <button
               onClick={handleLoopModeChange}
               className={clsx(
@@ -507,7 +505,7 @@ export default function EditAudioPage() {
             </button>
           </div>
 
-          <div className="flex gap-10 justify-center items-center pt-4">
+          <div className="flex p-7 gap-10 justify-center items-center">
             <IoIosFastforward
               className="rotate-180"
               size={40}

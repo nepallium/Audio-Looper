@@ -185,47 +185,6 @@ export default function Controls({ wavesurfer }) {
           </div>
         </label>
 
-        <label>
-          {`Key: ${formatSignedValue(pendingKey)} st`}
-          <div className="flex items-center gap-2">
-            <IoMdRemoveCircle
-              size={34}
-              onClick={() => handleKeyStep(-1)}
-              className="cursor-pointer"
-            />
-            <div className="w-full">
-              <input
-                type="range"
-                min={PITCH_RANGE.min}
-                max={PITCH_RANGE.max}
-                id="key"
-                step="1"
-                value={pendingKey}
-                onChange={onKeyChange}
-                disabled={isPitchShifting}
-              />
-              <div className="text-[10px] text-neutral-400 mt-1">
-                Applied: {formatSignedValue(activeKey)} st
-              </div>
-            </div>
-            <IoMdAddCircle
-              size={34}
-              onClick={() => handleKeyStep(1)}
-              className="cursor-pointer"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => applyKeyChange(pendingKey)}
-            disabled={
-              isPitchShifting || pendingKey === activeKey
-            }
-            className="mt-2 regular-button"
-          >
-            Apply Key Change
-          </button>
-        </label>
-
         <div className="flex gap-4">
           <button
             className="regular-button flex-1 py-3"
